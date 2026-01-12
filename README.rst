@@ -6,18 +6,14 @@ Notify.pit
    :alt: GOV.UK Notify
    :align: center
 
-.. contents:: Table of Contents
-   :depth: 2
-   :local:
-
 A drop-in mock service for the **GOV.UK Notify API**. This service is designed for local integration testing and end-to-end verification, allowing teams to test notification logic without contacting real government services.
 
 Features
 --------
 
-* **API Parity**: Mocked implementations for SMS, Email, and Letter endpoints based on the official spec.
+* **API Parity**: Mocked implementations for SMS, Email, Letter, and Received Text endpoints based on the official spec.
 * **JWT Security**: Strictly validates JWT tokens using the 30-second expiry window and ``iss`` and ``iat`` claims.
-* **Recovery APIs**: Custom ``/pit`` endpoints to retrieve or reset received data for test assertions.
+* **Recovery APIs**: Custom ``/pit`` endpoints to retrieve, inject, or reset received data for test assertions.
 * **High Reliability**: Maintained with a 93% test coverage threshold.
 
 Prerequisites
@@ -67,5 +63,6 @@ PIT (Point-In-Time) Endpoints
 
 These extra endpoints are provided for testing and recovery purposes:
 
-* **Get Received Data**: ``GET /pit/notifications``
-* **Clear Store**: ``DELETE /pit/reset``
+* **Get Sent Notifications**: ``GET /pit/notifications``
+* **Inject Received Text**: ``POST /pit/received-text`` (Simulates a user sending a text *to* Notify)
+* **Clear Store**: ``DELETE /pit/reset`` (Wipes all sent and received data)

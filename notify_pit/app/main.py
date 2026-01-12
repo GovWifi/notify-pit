@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Depends
 from .auth import validate_notify_jwt
-from .models import SmsRequest, EmailRequest, LetterRequest
+from .models import ReceivedTextMessage, SmsRequest, EmailRequest, LetterRequest
 import uuid
 
 app = FastAPI(title="Notify.pit")
 notifications_db = []
+received_texts_db = []
 
 
 @app.post("/v2/notifications/sms", status_code=201)
@@ -39,7 +40,22 @@ async def get_pit_notifications():
     return notifications_db
 
 
+@app.get("/v2/received-text-messages")
+async def get_received_texts(token: dict = Depends(validate_notify_jwt)):
+    """Notify API endpoint used by smoke tests to check replies."""
+    return {"received_text_messages": received_texts_db}
+
+
+@app.post("/pit/received-text", status_code=201)
+async def inject_received_text(payload: ReceivedTextMessage):
+    """PIT endpoint to simulate a user sending a text TO Notify."""
+    data = payload.model_dump()
+    received_texts_db.append(data)
+    return data
+
+
 @app.delete("/pit/reset")
 async def reset_pit():
     notifications_db.clear()
+    received_texts_db.clear()  # Ensure both stores are wiped
     return {"status": "reset"}

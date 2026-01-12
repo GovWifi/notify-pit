@@ -60,3 +60,32 @@ def test_pit_recovery_and_reset(client):
     client.delete("/pit/reset")
     res = client.get("/pit/notifications")
     assert res.json() == []
+
+
+def test_received_text_flow(client):
+    token = get_token()
+
+    # 1. Inject a message via PIT endpoint
+    inject_payload = {
+        "user_number": "447700900000",
+        "notify_number": "07537417417",
+        "content": "GO",
+    }
+    client.post("/pit/received-text", json=inject_payload)
+
+    # 2. Retrieve it via the standard Notify API
+    response = client.get(
+        "/v2/received-text-messages", headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == 200
+    messages = response.json()["received_text_messages"]
+    assert len(messages) == 1
+    assert messages[0]["content"] == "GO"
+    assert messages[0]["user_number"] == "447700900000"
+
+
+def test_received_text_unauthorized(client):
+    # Ensure standard security is applied to the new Notify endpoint
+    response = client.get("/v2/received-text-messages")
+    assert response.status_code == 401

@@ -1,11 +1,16 @@
 from fastapi import FastAPI, Depends
 from .auth import validate_notify_jwt
 from .models import SmsRequest, EmailRequest, LetterRequest
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 app = FastAPI(title="Notify.pit")
 notifications_db = []
+
+
+@app.get("/")
+async def root():
+    return {"message": "Notify.pit is running"}
 
 
 @app.post("/v2/notifications/sms", status_code=201)
@@ -16,7 +21,7 @@ async def send_sms(payload: SmsRequest, token: dict = Depends(validate_notify_jw
         {
             "id": str(uuid.uuid4()),
             "type": "sms",
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
         }
     )
     notifications_db.append(data)

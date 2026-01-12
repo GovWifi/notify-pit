@@ -10,6 +10,12 @@ def get_token(secret=SECRET, iat=None):
     return jwt.encode(payload, secret, algorithm="HS256")
 
 
+def test_root_endpoint(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Notify.pit is running"}
+
+
 # --- STANDARD NOTIFICATION TESTS ---
 
 

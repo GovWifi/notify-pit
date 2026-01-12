@@ -1,7 +1,7 @@
 IMAGE_NAME := notify-pit
 PWD := $(shell pwd)
 
-.PHONY: all build test clean
+.PHONY: all build test run clean
 
 # Default target: run tests
 all: test
@@ -11,10 +11,16 @@ all: test
 build:
 	docker build -t $(IMAGE_NAME) .
 
+# Run the service locally on port 8000
+# Mounts 'app/' so code changes are reflected immediately (Hot Reload)
+run: build
+	docker run --rm \
+		-p 8000:8000 \
+		-v "$(PWD)/app:/app/app" \
+		$(IMAGE_NAME)
+
 # Run the tests with coverage
-# 1. Depends on 'build' to ensure the image and dependencies are ready.
-# 2. Mounts local '/app' so code changes work immediately without a full rebuild.
-# 3. Mounts local '/tests' so you can add tests without rebuilding.
+# Mounts 'app/' and 'tests/' so you can test latest changes instantly
 test: build
 	docker run --rm \
 		-v "$(PWD)/tests:/app/tests" \
@@ -25,4 +31,3 @@ test: build
 # Stop and remove the image (optional cleanup)
 clean:
 	docker rmi $(IMAGE_NAME) || true
-

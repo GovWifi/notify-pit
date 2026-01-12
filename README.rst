@@ -41,13 +41,26 @@ Installation & Build
 Running the Service
 -------------------
 
-To start the service on your local machine:
+To start the service on your local machine using the default configuration:
 
 .. code-block:: bash
 
    docker run -p 8000:8000 notify-pit
 
-The service will be available at ``http://localhost:8000``. You can view the interactive documentation at ``http://localhost:8000/docs``.
+The service will be available at ``http://localhost:8000``.
+You can view the interactive documentation at ``http://localhost:8000/docs``.
+
+Configuration
+-------------
+
+By default, the service uses a hardcoded secret key for validation. If your client uses a specific API key, you must configure the service to match that key's secret.
+
+To do this, set the ``NOTIFY_SECRET`` environment variable to the **last 36 characters** of your API key (the secret key UUID).
+
+.. code-block:: bash
+
+   # Example for API Key: key_name-iss_uuid-574329d4-b6dd-4982-9204-c33fc3c45dbb
+   docker run -p 8000:8000 -e NOTIFY_SECRET=574329d4-b6dd-4982-9204-c33fc3c45dbb notify-pit
 
 Testing and Coverage
 --------------------

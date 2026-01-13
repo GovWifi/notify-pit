@@ -1,6 +1,6 @@
 # Notify.pit
 
-![GOV.UK Notify](https://assets.publishing.service.gov.uk/media/65d342e5e1bdec7737322247/s300_Untitled__1_.png){.align-center}
+![GOV.UK Notify](https://assets.publishing.service.gov.uk/media/65d342e5e1bdec7737322247/s300_Untitled__1_.png)
 
 A drop-in mock service for the **GOV.UK Notify API**. This service is
 designed for local integration testing and end-to-end verification,

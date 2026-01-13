@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" class="govuk-template ">
+  <head>
+    <meta charset="utf-8">
+    <title>Notify.pit Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0c0c">
+    <link href="{{ url_for('static', path='govuk-frontend-5.13.0.min.css') }}" rel="stylesheet">
+  </head>
+  <body class="govuk-template__body ">
+    <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
+
+    <header class="govuk-header" role="banner" data-module="govuk-header">
+      <div class="govuk-header__container govuk-width-container">
+        <div class="govuk-header__logo">
+          <a href="#" class="govuk-header__link govuk-header__link--homepage">
+            <span class="govuk-header__logotype">
+              <span class="govuk-header__logotype-text">
+                Notify.pit
+              </span>
+            </span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div class="govuk-width-container">
+      <main class="govuk-main-wrapper" id="main-content" role="main">
+        <h1 class="govuk-heading-xl">Notification Dashboard</h1>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-quarter">
+                <div class="govuk-summary-card">
+                    <div class="govuk-summary-card__title-wrapper">
+                        <h2 class="govuk-summary-card__title">Total Sent</h2>
+                    </div>
+                    <div class="govuk-summary-card__content">
+                        <p class="govuk-body govuk-!-font-size-48 govuk-!-font-weight-bold">{{ notifications|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="govuk-grid-column-three-quarters">
+                 <p class="govuk-body">
+                    <a href="/pit/notifications" class="govuk-link">View Raw JSON</a> |
+                    <a href="/docs" class="govuk-link">API Docs</a>
+                </p>
+            </div>
+        </div>
+
+        <table class="govuk-table">
+          <caption class="govuk-table__caption govuk-table__caption--m">Recent Notifications</caption>
+          <thead class="govuk-table__head">
+            <tr class="govuk-table__row">
+              <th scope="col" class="govuk-table__header">Time (UTC)</th>
+              <th scope="col" class="govuk-table__header">Type</th>
+              <th scope="col" class="govuk-table__header">Recipient</th>
+              <th scope="col" class="govuk-table__header">Reference</th>
+              <th scope="col" class="govuk-table__header">ID</th>
+            </tr>
+          </thead>
+          <tbody class="govuk-table__body">
+            {% for n in notifications|reverse %}
+            <tr class="govuk-table__row">
+              <td class="govuk-table__cell">{{ n.created_at or 'N/A' }}</td>
+              <td class="govuk-table__cell">
+                  <strong class="govuk-tag {{ 'govuk-tag--blue' if n.type == 'email' else 'govuk-tag--green' }}">
+                      {{ n.type }}
+                  </strong>
+              </td>
+              <td class="govuk-table__cell">
+                  {{ n.phone_number or n.email_address or n.personalisation.address_line_1 }}
+              </td>
+              <td class="govuk-table__cell">{{ n.reference or '-' }}</td>
+              <td class="govuk-table__cell govuk-!-font-size-14">{{ n.id }}</td>
+            </tr>
+            {% else %}
+            <tr class="govuk-table__row">
+                <td class="govuk-table__cell" colspan="5">No notifications received yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </main>
+    </div>
+  </body>
+</html>

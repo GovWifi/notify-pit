@@ -1,15 +1,36 @@
-from fastapi import FastAPI, Depends
+from typing import Any
+from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, Depends, Request
+from fastapi.templating import Jinja2Templates
 from .auth import validate_notify_jwt
 from .models import SmsRequest, EmailRequest, LetterRequest
 from datetime import datetime, timezone
 import uuid
+import os
 
 app = FastAPI(title="Notify.pit")
-notifications_db = []
+notifications_db: list[dict[str, Any]] = []
+
+# Setup Templates - pointing to the 'app/templates' directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
+app.mount(
+    "/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static"
+)
+app.mount(
+    "/assets", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static"
+)
 
 
-@app.get("/")
-async def root():
+@app.get("/", include_in_schema=False)
+async def root(request: Request):
+    return templates.TemplateResponse(
+        "dashboard.html", {"request": request, "notifications": notifications_db}
+    )
+
+
+@app.get("/healthcheck", include_in_schema=False)
+async def healthcheck():
     return {"message": "Notify.pit is running"}
 
 
@@ -30,7 +51,13 @@ async def send_sms(payload: SmsRequest, token: dict = Depends(validate_notify_jw
 @app.post("/v2/notifications/email", status_code=201)
 async def send_email(payload: EmailRequest, token: dict = Depends(validate_notify_jwt)):
     data = payload.model_dump()
-    data.update({"id": str(uuid.uuid4()), "type": "email"})
+    data.update(
+        {
+            "id": str(uuid.uuid4()),
+            "type": "email",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
     notifications_db.append(data)
     return {"id": data["id"], "reference": data.get("reference")}
 
@@ -40,7 +67,13 @@ async def send_letter(
     payload: LetterRequest, token: dict = Depends(validate_notify_jwt)
 ):
     data = payload.model_dump()
-    data.update({"id": str(uuid.uuid4()), "type": "letter"})
+    data.update(
+        {
+            "id": str(uuid.uuid4()),
+            "type": "letter",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
     notifications_db.append(data)
     return {"id": data["id"], "reference": data.get("reference")}
 
@@ -55,13 +88,10 @@ async def get_received_texts(token: dict = Depends(validate_notify_jwt)):
         content = "Mock Content"
         p = sms.get("personalisation") or {}
 
-        # FIX: Check for explicit content FIRST to support manual injection
         if "content" in sms:
             content = sms["content"]
-        # Branch 2: Signup logic (Username/Password)
         elif "username" in p and "password" in p:
             content = f"Username:\n{p['username']}\nPassword:\n{p['password']}"
-        # Branch 3: Deletion logic (Empty personalisation)
         elif not p:
             content = "Your GovWifi username and password has been removed"
 

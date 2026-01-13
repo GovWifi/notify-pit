@@ -6,3 +6,5 @@ pytest
 pytest-cov
 httpx
 pydantic
+jinja2
+aiofiles

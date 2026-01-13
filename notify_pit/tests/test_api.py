@@ -11,7 +11,7 @@ def get_token(secret=SECRET, iat=None):
 
 
 def test_root_endpoint(client):
-    response = client.get("/")
+    response = client.get("/healthcheck")
     assert response.status_code == 200
     assert response.json() == {"message": "Notify.pit is running"}
 

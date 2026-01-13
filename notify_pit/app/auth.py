@@ -6,7 +6,6 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 security = HTTPBearer()
 
-# UPDATE THIS LINE: Get secret from env or use default
 SECRET = os.environ.get("NOTIFY_SECRET", "3d844edf-8d35-48ac-975b-e847b4f122b0")
 
 

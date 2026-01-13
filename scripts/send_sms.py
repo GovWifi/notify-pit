@@ -9,10 +9,12 @@
 import os
 from notifications_python_client.notifications import NotificationsAPIClient
 
-base_url = "http://localhost:8000"
-# base_url = "https://api.notifications.service.gov.uk"
-api_key = "mytestkey-00000000-0000-0000-0000-000000000000-574329d4-b6dd-4982-9204-c33fc3c45dbb"
-
+# "https://api.notifications.service.gov.uk"
+base_url = os.getenv("NOTIFICATIONS_BASE_URL", "http://localhost:8000")
+api_key = os.getenv(
+    "NOTIFICATIONS_API_KEY",
+    "mytestkey-00000000-0000-0000-0000-000000000000-3d844edf-8d35-48ac-975b-e847b4f122b0",
+)
 notifications_client = NotificationsAPIClient(api_key=api_key, base_url=base_url)
 
 response = notifications_client.send_sms_notification(

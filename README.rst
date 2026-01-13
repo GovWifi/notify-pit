@@ -45,7 +45,7 @@ To start the service on your local machine using the default configuration:
 
 .. code-block:: bash
 
-   docker run -p 8000:8000 notify-pit
+   docker run --rm -p 8000:8000 notify-pit
 
 The service will be available at ``http://localhost:8000``.
 You can view the interactive documentation at ``http://localhost:8000/docs``.
@@ -60,7 +60,7 @@ To do this, set the ``NOTIFY_SECRET`` environment variable to the **last 36 char
 .. code-block:: bash
 
    # Example for API Key: key_name-iss_uuid-574329d4-b6dd-4982-9204-c33fc3c45dbb
-   docker run -p 8000:8000 -e NOTIFY_SECRET=574329d4-b6dd-4982-9204-c33fc3c45dbb notify-pit
+   docker run --rm -p 8000:8000 -e NOTIFY_SECRET=574329d4-b6dd-4982-9204-c33fc3c45dbb notify-pit
 
 Testing and Coverage
 --------------------
@@ -69,10 +69,10 @@ To run the test suite and verify code coverage, mount the local ``tests`` direct
 
 .. code-block:: bash
 
-   docker run -v $(pwd)/tests:/app/tests notify-pit pytest --cov=app tests/
+   docker run --rm -v $(pwd)/tests:/app/tests notify-pit pytest --cov=app tests/
 
-PIT (Point-In-Time) Endpoints
------------------------------
+Special Helper Endpoints
+------------------------
 
 These extra endpoints are provided for testing and recovery purposes:
 

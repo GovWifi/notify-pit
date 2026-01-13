@@ -16,7 +16,6 @@ async def root():
 @app.post("/v2/notifications/sms", status_code=201)
 async def send_sms(payload: SmsRequest, token: dict = Depends(validate_notify_jwt)):
     data = payload.model_dump()
-    # We must add 'created_at' for the new received-text logic to work
     data.update(
         {
             "id": str(uuid.uuid4()),

@@ -13,16 +13,11 @@ government services.
 
 ## Features
 
-- **API Parity**: Mocked implementations for SMS, Email, Letter, and
-    Received Text endpoints based on the official spec.
-- **Loopback Logic**: Automatically generates \"received\" text
-    messages based on sent SMS content (e.g. sending a signup SMS
-    generates a reply with credentials).
-- **JWT Security**: Strictly validates JWT tokens using the 30-second
-    expiry window and `iss` and `iat` claims.
-- **Recovery APIs**: Custom `/pit` endpoints to retrieve, inject, or
-    reset received data for test assertions.
-- **High Reliability**: Maintained with a 93% test coverage threshold.
+- **Web Dashboard**: A real-time visual dashboard at the root URL (`/`) to view sent notifications, styled with the GOV.UK Design System.
+- **API Parity**: Mocked implementations for SMS, Email, Letter, and Received Text endpoints based on the official spec.
+- **Loopback Logic**: Automatically generates "received" text messages based on sent SMS content (e.g. sending a signup SMS generates a reply with credentials).
+- **JWT Security**: Strictly validates JWT tokens using the 30-second expiry window and `iss` and `iat` claims.
+- **Recovery APIs**: Custom `/pit` endpoints to retrieve, inject, or reset received data for test assertions.
 
 ## Prerequisites
 
@@ -62,8 +57,10 @@ hot-reloading enabled:
 make run
 ```
 
-The service will be available at `http://localhost:8000`. You can view
-the interactive documentation at `http://localhost:8000/docs`.
+The service will be available at <http://localhost:8000>.
+
+- Dashboard: Visit <http://localhost:8000/> to view sent messages.
+- API Docs: Visit <http://localhost:8000/docs> for interactive API documentation.
 
 ## Configuration
 
@@ -81,10 +78,7 @@ docker run --rm -p 8000:8000 -e NOTIFY_SECRET=574329d4-b6dd-4982-9204-c33fc3c45d
 
 ## Testing and Coverage
 
-We use [pytest]{.title-ref} and [pytest-cov]{.title-ref} to ensure the
-service behaves as expected. The Makefile maps your local directories
-into the container, so you can run tests against your latest code
-changes without rebuilding the image.
+We use pytest and pytest-cov to ensure the service behaves as expected. The Makefile maps your local directories into the container, so you can run tests against your latest code changes without rebuilding the image.
 
 To run the full test suite and check coverage:
 
@@ -92,12 +86,12 @@ To run the full test suite and check coverage:
 make test
 ```
 
-## Special Helper Endpoints
+### Special Helper Endpoints
 
 These extra endpoints are provided for testing and recovery purposes:
 
-- **Get Sent Notifications**: `GET /pit/notifications`
-- **Get Received Texts**: `GET /v2/received-text-messages` (Implements
-    loopback logic for smoke tests)
-- **Clear Store**: `DELETE /pit/reset` (Wipes all sent and received
-    data)
+- **Web Dashboard**: `GET /` (Visual interface for sent notifications)
+- **Healthcheck**: `GET /healthcheck` (Simple JSON status response)
+- **Get Sent Notifications**: `GET /pit/notifications` (JSON list of all messages)
+- **Get Received Texts**: `GET /v2/received-text-messages` (Implements loopback logic for smoke tests)
+- **Clear Store**: `DELETE /pit/reset` (Wipes all sent and received data)

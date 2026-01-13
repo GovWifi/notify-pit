@@ -12,6 +12,7 @@ Features
 --------
 
 * **API Parity**: Mocked implementations for SMS, Email, Letter, and Received Text endpoints based on the official spec.
+* **Loopback Logic**: Automatically generates "received" text messages based on sent SMS content (e.g. sending a signup SMS generates a reply with credentials).
 * **JWT Security**: Strictly validates JWT tokens using the 30-second expiry window and ``iss`` and ``iat`` claims.
 * **Recovery APIs**: Custom ``/pit`` endpoints to retrieve, inject, or reset received data for test assertions.
 * **High Reliability**: Maintained with a 93% test coverage threshold.
@@ -20,10 +21,10 @@ Prerequisites
 -------------
 
 * Docker installed and running.
-* (Optional) Python 3.12+ for local development.
+* (Optional) ``make`` tool (standard on Linux/Mac, available on Windows).
 
-Installation & Build
---------------------
+Installation
+------------
 
 1. **Clone the repository**:
 
@@ -34,6 +35,14 @@ Installation & Build
 
 2. **Build the Docker image**:
 
+   You can use the provided Makefile to handle the build process:
+
+   .. code-block:: bash
+
+      make build
+
+   Alternatively, using Docker directly:
+
    .. code-block:: bash
 
       docker build -t notify-pit .
@@ -41,21 +50,20 @@ Installation & Build
 Running the Service
 -------------------
 
-To start the service on your local machine using the default configuration:
+To start the service on your local machine (port 8000) with hot-reloading enabled:
 
 .. code-block:: bash
 
-   docker run --rm -p 8000:8000 notify-pit
+   make run
 
-The service will be available at ``http://localhost:8000``.
-You can view the interactive documentation at ``http://localhost:8000/docs``.
+The service will be available at ``http://localhost:8000``. You can view the interactive documentation at ``http://localhost:8000/docs``.
 
 Configuration
 -------------
 
 By default, the service uses a hardcoded secret key for validation. If your client uses a specific API key, you must configure the service to match that key's secret.
 
-To do this, set the ``NOTIFY_SECRET`` environment variable to the **last 36 characters** of your API key (the secret key UUID).
+To do this, set the ``NOTIFY_SECRET`` environment variable. This should be the **last 36 characters** of your API key (the secret key UUID).
 
 .. code-block:: bash
 
@@ -65,11 +73,13 @@ To do this, set the ``NOTIFY_SECRET`` environment variable to the **last 36 char
 Testing and Coverage
 --------------------
 
-To run the test suite and verify code coverage, mount the local ``tests`` directory into the container to ensure the latest tests are run without a full rebuild:
+We use `pytest` and `pytest-cov` to ensure the service behaves as expected. The Makefile maps your local directories into the container, so you can run tests against your latest code changes without rebuilding the image.
+
+To run the full test suite and check coverage:
 
 .. code-block:: bash
 
-   docker run --rm -v $(pwd)/tests:/app/tests notify-pit pytest --cov=app tests/
+   make test
 
 Special Helper Endpoints
 ------------------------
@@ -77,5 +87,5 @@ Special Helper Endpoints
 These extra endpoints are provided for testing and recovery purposes:
 
 * **Get Sent Notifications**: ``GET /pit/notifications``
-* **Inject Received Text**: ``POST /pit/received-text`` (Simulates a user sending a text *to* Notify)
+* **Get Received Texts**: ``GET /v2/received-text-messages`` (Implements loopback logic for smoke tests)
 * **Clear Store**: ``DELETE /pit/reset`` (Wipes all sent and received data)

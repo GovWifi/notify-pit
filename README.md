@@ -1,0 +1,102 @@
+# Notify.pit
+
+![GOV.UK Notify](https://assets.publishing.service.gov.uk/media/65d342e5e1bdec7737322247/s300_Untitled__1_.png){.align-center}
+
+A drop-in mock service for the **GOV.UK Notify API**. This service is
+designed for local integration testing and end-to-end verification,
+allowing teams to test notification logic without contacting real
+government services.
+
+<!-- Pytest Coverage Comment:Begin -->
+<!-- Pytest Coverage Comment:End -->
+
+## Features
+
+- **API Parity**: Mocked implementations for SMS, Email, Letter, and
+    Received Text endpoints based on the official spec.
+- **Loopback Logic**: Automatically generates \"received\" text
+    messages based on sent SMS content (e.g. sending a signup SMS
+    generates a reply with credentials).
+- **JWT Security**: Strictly validates JWT tokens using the 30-second
+    expiry window and `iss` and `iat` claims.
+- **Recovery APIs**: Custom `/pit` endpoints to retrieve, inject, or
+    reset received data for test assertions.
+- **High Reliability**: Maintained with a 93% test coverage threshold.
+
+## Prerequisites
+
+- Docker installed and running.
+- (Optional) `make` tool (standard on Linux/Mac, available on
+    Windows).
+
+## Installation
+
+1. **Clone the repository**:
+
+    ``` bash
+    git clone https://github.com/yourusername/notify_pit.git
+    cd notify_pit
+    ```
+
+2. **Build the Docker image**:
+
+    You can use the provided Makefile to handle the build process:
+
+    ``` bash
+    make build
+    ```
+
+    Alternatively, using Docker directly:
+
+    ``` bash
+    docker build -t notify-pit .
+    ```
+
+## Running the Service
+
+To start the service on your local machine (port 8000) with
+hot-reloading enabled:
+
+``` bash
+make run
+```
+
+The service will be available at `http://localhost:8000`. You can view
+the interactive documentation at `http://localhost:8000/docs`.
+
+## Configuration
+
+By default, the service uses a hardcoded secret key for validation. If
+your client uses a specific API key, you must configure the service to
+match that key\'s secret.
+
+To do this, set the `NOTIFY_SECRET` environment variable. This should be
+the **last 36 characters** of your API key (the secret key UUID).
+
+``` bash
+# Example for API Key: key_name-iss_uuid-574329d4-b6dd-4982-9204-c33fc3c45dbb
+docker run --rm -p 8000:8000 -e NOTIFY_SECRET=574329d4-b6dd-4982-9204-c33fc3c45dbb notify-pit
+```
+
+## Testing and Coverage
+
+We use [pytest]{.title-ref} and [pytest-cov]{.title-ref} to ensure the
+service behaves as expected. The Makefile maps your local directories
+into the container, so you can run tests against your latest code
+changes without rebuilding the image.
+
+To run the full test suite and check coverage:
+
+``` bash
+make test
+```
+
+## Special Helper Endpoints
+
+These extra endpoints are provided for testing and recovery purposes:
+
+- **Get Sent Notifications**: `GET /pit/notifications`
+- **Get Received Texts**: `GET /v2/received-text-messages` (Implements
+    loopback logic for smoke tests)
+- **Clear Store**: `DELETE /pit/reset` (Wipes all sent and received
+    data)

@@ -1,11 +1,34 @@
 name: CI
 
-on: [push, pull_request]
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+# Permissions are required to allow the action to comment on the PR
+permissions:
+    contents: read
+    pull-requests: write
 
 jobs:
     test:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+
             - name: Build and Test
               run: make test
+
+            - name: Post Coverage Comment
+              # Only runs if the 'test' step generates the XML file
+              if: success()
+              uses: MishaKav/pytest-coverage-comment@main
+              with:
+                  pytest-xml-coverage-path: app/coverage.xml
+                  title: "Coverage Report"
+                  badge-title: "Coverage"
+                  # Optional: Hides the comment if coverage hasn't changed
+                  hide-comment: false
+                  create-new-comment: false
+                  report-only-changed-files: true

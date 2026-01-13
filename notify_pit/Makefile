@@ -26,7 +26,7 @@ test: build
 		-v "$(PWD)/tests:/app/tests" \
 		-v "$(PWD)/app:/app/app" \
 		$(IMAGE_NAME) \
-		pytest --cov=app tests/
+		pytest --cov=app --cov-report=term --cov-report=xml:/app/app/coverage.xml tests/
 
 # Stop and remove the image (optional cleanup)
 clean:

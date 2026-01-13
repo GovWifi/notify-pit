@@ -8,6 +8,9 @@ Notify.pit
 
 A drop-in mock service for the **GOV.UK Notify API**. This service is designed for local integration testing and end-to-end verification, allowing teams to test notification logic without contacting real government services.
 
+<!-- Pytest Coverage Comment:Begin -->
+<!-- Pytest Coverage Comment:End -->
+
 Features
 --------
 

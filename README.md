@@ -27,26 +27,26 @@ government services.
 
 ## Installation
 
-1. **Clone the repository**:
+**Clone the repository**:
 
-    ``` bash
-    git clone https://github.com/yourusername/notify_pit.git
-    cd notify_pit
-    ```
+``` bash
+git clone https://github.com/yourusername/notify_pit.git
+cd notify_pit
+```
 
-2. **Build the Docker image**:
+**Build the Docker image**:
 
-    You can use the provided Makefile to handle the build process:
+You can use the provided Makefile to handle the build process:
 
-    ``` bash
-    make build
-    ```
+``` bash
+make build
+```
 
-    Alternatively, using Docker directly:
+Alternatively, using Docker directly:
 
-    ``` bash
-    docker build -t notify-pit .
-    ```
+``` bash
+docker build -t notify-pit .
+```
 
 ## Running the Service
 

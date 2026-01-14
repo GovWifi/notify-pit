@@ -1,6 +1,15 @@
 # Notify.pit
 
-![Notify.pit's project icon which is a dog with a letter in its mouth](./docs/notify-pit-project-icon.png "Notify.pit")
+<table>
+  <tr>
+    <td width="33%" valign="middle">
+      <img src="./docs/notify-pit-project-icon.png" alt="Notify.pit Logo">
+    </td>
+    <td width="66%" valign="middle">
+      <img src="./docs/2026-01-14-Dashboard-Screenshot.png" alt="Notify.pit Dashboard Screenshot">
+    </td>
+  </tr>
+</table>
 
 A drop-in mock service for the **GOV.UK Notify API**. This service is
 designed for local integration testing and end-to-end verification,
@@ -8,7 +17,7 @@ allowing teams to test notification logic without contacting real
 government services.
 
 <!-- Pytest Coverage Comment:Begin -->
-<a href="https://github.com/GovWifi/notify-pit/blob/main/README.md"><img alt="Coverage" src="https://img.shields.io/badge/Coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/__init__.py">__init__.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/auth.py">auth.py</a></td><td>15</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/main.py">main.py</a></td><td>62</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/models.py">models.py</a></td><td>12</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>89</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
+<a href="https://github.com/GovWifi/notify-pit/blob/main/README.md"><img alt="Coverage" src="https://img.shields.io/badge/Coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/__init__.py">**init**.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/auth.py">auth.py</a></td><td>15</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/main.py">main.py</a></td><td>62</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/models.py">models.py</a></td><td>12</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>89</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
 <!-- Pytest Coverage Comment:End -->
 
 ## Features

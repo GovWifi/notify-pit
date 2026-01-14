@@ -25,6 +25,10 @@ jobs:
             - name: Build and Test
               run: make test
 
+            - name: Updating coverage permissions
+              if: always() # Run even if tests fail, so we can still see coverage if generated
+              run: sudo chown -R $USER:$USER notify_pit/app
+
             - name: Post Coverage Comment
               id: coverage
               if: success()

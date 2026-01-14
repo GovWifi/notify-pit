@@ -16,7 +16,7 @@ run:
 # Run all tests (unit+UI):
 test:
 	docker compose up -d app
-	docker compose run --rm tests pytest --browser chromium
+	docker compose run --rm tests pytest --browser chromium --cov=app --cov-report=xml:/app/app/coverage.xml tests/
 	docker compose down
 
 # Usage: make localuitest

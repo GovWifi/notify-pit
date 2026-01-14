@@ -6,7 +6,7 @@
       <img src="./docs/notify-pit-project-icon.png" alt="Notify.pit Logo">
     </td>
     <td width="66%" valign="middle">
-      <img src="./docs/2026-01-14-Dashboard-Screenshot.png" alt="Notify.pit Dashboard Screenshot">
+      <img src="./docs/ 2026-01-14-dashboard-screenshot.png" alt="Notify.pit Dashboard Screenshot">
     </td>
   </tr>
 </table>

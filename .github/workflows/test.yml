@@ -34,7 +34,7 @@ jobs:
               if: success()
               uses: MishaKav/pytest-coverage-comment@main
               with:
-                  pytest-xml-coverage-path: notify_pit/app/coverage.xml
+                  pytest-xml-coverage-path: notify_pit/app/app/coverage.xml
                   title: "Coverage Report"
                   badge-title: "Coverage"
                   hide-comment: false

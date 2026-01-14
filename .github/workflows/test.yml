@@ -25,6 +25,11 @@ jobs:
             - name: Build and Test
               run: make test
 
+            - name: Fix coverage permissions
+              if: always()
+              # The file is in 'tests' because of the volume map ./tests:/app/tests
+              run: sudo chown -R $USER:$USER tests/
+
             - name: Post Coverage Comment
               id: coverage
               if: success()

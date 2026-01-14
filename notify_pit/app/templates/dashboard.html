@@ -41,6 +41,39 @@
         margin-bottom: 30px;
         border-bottom: 1px solid #b1b4b6;
       }
+      /* Modal Styles */
+      dialog {
+        border: 5px solid #0b0c0c;
+        padding: 0;
+        width: 80%;
+        max-width: 800px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      }
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.6);
+      }
+      .modal-header {
+        background-color: #f3f2f1;
+        padding: 15px 20px;
+        border-bottom: 1px solid #b1b4b6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-body {
+        padding: 20px;
+        background-color: #fff;
+        overflow: auto;
+        max-height: 70vh;
+      }
+      .json-view {
+        font-family: monospace;
+        white-space: pre-wrap;
+        background: #f8f8f8;
+        padding: 15px;
+        border: 1px solid #b1b4b6;
+        font-size: 14px;
+      }
     </style>
   </head>
   <body class="govuk-template__body ">
@@ -136,6 +169,9 @@
               <th scope="col" class="govuk-table__header" aria-sort="none" data-column="4">
                 <button onclick="sortTable(4)">ID</button>
               </th>
+              <th scope="col" class="govuk-table__header">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody class="govuk-table__body">
@@ -152,10 +188,13 @@
               </td>
               <td class="govuk-table__cell">{{ n.reference or '-' }}</td>
               <td class="govuk-table__cell govuk-!-font-size-14">{{ n.id }}</td>
+              <td class="govuk-table__cell">
+                <a href="#" class="govuk-link" onclick="viewJson(event, '{{ n.id }}')">View JSON</a>
+              </td>
             </tr>
             {% else %}
             <tr class="govuk-table__row" id="no-data-row">
-                <td class="govuk-table__cell" colspan="5">No notifications received yet.</td>
+                <td class="govuk-table__cell" colspan="6">No notifications received yet.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -163,7 +202,34 @@
       </main>
     </div>
 
+    <dialog id="json-modal">
+        <div class="modal-header">
+            <h2 class="govuk-heading-m govuk-!-margin-bottom-0">Message Payload</h2>
+            <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" onclick="closeModal()">Close</button>
+        </div>
+        <div class="modal-body">
+            <pre id="json-content" class="json-view"></pre>
+        </div>
+    </dialog>
+
     <script>
+      // Load raw data from backend
+      const rawData = {{ notifications_json | safe }};
+
+      function viewJson(e, id) {
+        e.preventDefault();
+        const record = rawData.find(r => r.id === id);
+        if (record) {
+            const jsonStr = JSON.stringify(record, null, 2);
+            document.getElementById('json-content').textContent = jsonStr;
+            document.getElementById('json-modal').showModal();
+        }
+      }
+
+      function closeModal() {
+        document.getElementById('json-modal').close();
+      }
+
       function filterTable() {
         const dateInput = document.getElementById("filter-date").value.toLowerCase();
         const typeInput = document.getElementById("filter-type").value.toLowerCase();
@@ -171,10 +237,8 @@
         const tr = table.getElementsByTagName("tr");
         let visibleCount = 0;
 
-        // Loop through all table rows, starting from index 1 to skip header
         for (let i = 1; i < tr.length; i++) {
           const row = tr[i];
-          // Skip the 'No notifications' row if it exists
           if (row.id === "no-data-row") continue;
 
           const dateCell = row.getElementsByTagName("td")[0];
@@ -183,11 +247,7 @@
           if (dateCell && typeCell) {
             const dateText = dateCell.textContent || dateCell.innerText;
             const typeText = typeCell.textContent || typeCell.innerText;
-
-            // Check Date Match (partial text match works for YYYY-MM-DD vs ISO string)
             const dateMatch = dateText.toLowerCase().indexOf(dateInput) > -1;
-
-            // Check Type Match (exact match or 'all')
             const typeMatch = (typeInput === "all") || (typeText.trim().toLowerCase() === typeInput);
 
             if (dateMatch && typeMatch) {
@@ -198,15 +258,12 @@
             }
           }
         }
-
-        // Update the "Total Sent" counter
         document.getElementById("total-count").innerText = visibleCount;
       }
 
       function sortTable(columnIndex) {
         const table = document.getElementById("notifications-table");
         const tbody = table.querySelector("tbody");
-        // Convert to array to sort, filtering out any "no-data" rows just in case
         const rows = Array.from(tbody.querySelectorAll("tr")).filter(r => r.id !== "no-data-row");
 
         if (rows.length === 0) return;
@@ -215,11 +272,9 @@
         const currentSort = header.getAttribute("aria-sort");
         const newSort = currentSort === "ascending" ? "descending" : "ascending";
 
-        // Reset all headers
         table.querySelectorAll("th").forEach(th => th.setAttribute("aria-sort", "none"));
         header.setAttribute("aria-sort", newSort);
 
-        // Sort logic
         rows.sort((rowA, rowB) => {
           const cellA = rowA.cells[columnIndex].innerText.trim().toLowerCase();
           const cellB = rowB.cells[columnIndex].innerText.trim().toLowerCase();
@@ -229,7 +284,6 @@
           return 0;
         });
 
-        // Re-append sorted rows (hidden rows remain hidden but move position in DOM)
         rows.forEach(row => tbody.appendChild(row));
       }
     </script>

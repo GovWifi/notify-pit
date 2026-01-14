@@ -7,6 +7,7 @@ from .models import SmsRequest, EmailRequest, LetterRequest
 from datetime import datetime, timezone
 import uuid
 import os
+import json
 
 app = FastAPI(title="Notify.pit")
 notifications_db: list[dict[str, Any]] = []
@@ -25,7 +26,13 @@ app.mount(
 @app.get("/", include_in_schema=False)
 async def root(request: Request):
     return templates.TemplateResponse(
-        "dashboard.html", {"request": request, "notifications": notifications_db}
+        "dashboard.html",
+        {
+            "request": request,
+            "notifications": notifications_db,
+            # Pass the raw data as a JSON string for the frontend to use
+            "notifications_json": json.dumps(notifications_db, default=str),
+        },
     )
 
 

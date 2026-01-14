@@ -35,12 +35,13 @@ jobs:
               if: success()
               uses: MishaKav/pytest-coverage-comment@main
               with:
-                  pytest-xml-coverage-path: app/tests/coverage.xml
+                  # Path relative to the repository root
+                  pytest-xml-coverage-path: notify_pit/tests/coverage.xml
                   title: "Coverage Report"
                   badge-title: "Coverage"
                   hide-comment: false
                   create-new-comment: false
-                  report-only-changed-files: true
+                  report-only-changed-files: false
 
             - name: "Update README"
               run: |

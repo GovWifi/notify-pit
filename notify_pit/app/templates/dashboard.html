@@ -6,6 +6,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0c0c">
     <link href="{{ url_for('static', path='govuk-frontend-5.13.0.min.css') }}" rel="stylesheet">
+    <style>
+      .govuk-table__header button {
+        background: none;
+        border: none;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        padding: 0;
+        text-align: left;
+        display: flex;
+        align-items: center;
+      }
+      .govuk-table__header button:hover {
+        text-decoration: underline;
+      }
+      .govuk-table__header button::after {
+        content: " \25BC"; /* Down arrow */
+        font-size: 0.7em;
+        margin-left: 5px;
+        opacity: 0.3;
+      }
+      .govuk-table__header[aria-sort="ascending"] button::after {
+        content: " \25B2"; /* Up arrow */
+        opacity: 1;
+      }
+      .govuk-table__header[aria-sort="descending"] button::after {
+        content: " \25BC"; /* Down arrow */
+        opacity: 1;
+      }
+      .filter-container {
+        background-color: #f3f2f1;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #b1b4b6;
+      }
+    </style>
   </head>
   <body class="govuk-template__body ">
     <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
@@ -35,7 +71,9 @@
                         <h2 class="govuk-summary-card__title">Total Sent</h2>
                     </div>
                     <div class="govuk-summary-card__content">
-                        <p class="govuk-body govuk-!-font-size-48 govuk-!-font-weight-bold">{{ notifications|length }}</p>
+                        <p class="govuk-body govuk-!-font-size-48 govuk-!-font-weight-bold" id="total-count">
+                            {{ notifications|length }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -47,15 +85,57 @@
             </div>
         </div>
 
-        <table class="govuk-table">
+        <div class="filter-container">
+          <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+              <div class="govuk-form-group">
+                <label class="govuk-label" for="filter-date">
+                  Filter by Date (UTC)
+                </label>
+                <div id="filter-date-hint" class="govuk-hint">
+                  Select a specific date
+                </div>
+                <input class="govuk-input" id="filter-date" name="filter-date" type="date" aria-describedby="filter-date-hint" oninput="filterTable()">
+              </div>
+            </div>
+            <div class="govuk-grid-column-one-half">
+              <div class="govuk-form-group">
+                <label class="govuk-label" for="filter-type">
+                  Filter by Type
+                </label>
+                <div class="govuk-hint">
+                  Select channel
+                </div>
+                <select class="govuk-select" id="filter-type" name="filter-type" onchange="filterTable()" style="width: 100%;">
+                  <option value="all">All</option>
+                  <option value="sms">SMS</option>
+                  <option value="email">Email</option>
+                  <option value="letter">Letter</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <table class="govuk-table" id="notifications-table">
           <caption class="govuk-table__caption govuk-table__caption--m">Recent Notifications</caption>
           <thead class="govuk-table__head">
             <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header">Time (UTC)</th>
-              <th scope="col" class="govuk-table__header">Type</th>
-              <th scope="col" class="govuk-table__header">Recipient</th>
-              <th scope="col" class="govuk-table__header">Reference</th>
-              <th scope="col" class="govuk-table__header">ID</th>
+              <th scope="col" class="govuk-table__header" aria-sort="descending" data-column="0">
+                <button onclick="sortTable(0)">Time (UTC)</button>
+              </th>
+              <th scope="col" class="govuk-table__header" aria-sort="none" data-column="1">
+                <button onclick="sortTable(1)">Type</button>
+              </th>
+              <th scope="col" class="govuk-table__header" aria-sort="none" data-column="2">
+                <button onclick="sortTable(2)">Recipient</button>
+              </th>
+              <th scope="col" class="govuk-table__header" aria-sort="none" data-column="3">
+                <button onclick="sortTable(3)">Reference</button>
+              </th>
+              <th scope="col" class="govuk-table__header" aria-sort="none" data-column="4">
+                <button onclick="sortTable(4)">ID</button>
+              </th>
             </tr>
           </thead>
           <tbody class="govuk-table__body">
@@ -74,7 +154,7 @@
               <td class="govuk-table__cell govuk-!-font-size-14">{{ n.id }}</td>
             </tr>
             {% else %}
-            <tr class="govuk-table__row">
+            <tr class="govuk-table__row" id="no-data-row">
                 <td class="govuk-table__cell" colspan="5">No notifications received yet.</td>
             </tr>
             {% endfor %}
@@ -82,5 +162,76 @@
         </table>
       </main>
     </div>
+
+    <script>
+      function filterTable() {
+        const dateInput = document.getElementById("filter-date").value.toLowerCase();
+        const typeInput = document.getElementById("filter-type").value.toLowerCase();
+        const table = document.getElementById("notifications-table");
+        const tr = table.getElementsByTagName("tr");
+        let visibleCount = 0;
+
+        // Loop through all table rows, starting from index 1 to skip header
+        for (let i = 1; i < tr.length; i++) {
+          const row = tr[i];
+          // Skip the 'No notifications' row if it exists
+          if (row.id === "no-data-row") continue;
+
+          const dateCell = row.getElementsByTagName("td")[0];
+          const typeCell = row.getElementsByTagName("td")[1];
+
+          if (dateCell && typeCell) {
+            const dateText = dateCell.textContent || dateCell.innerText;
+            const typeText = typeCell.textContent || typeCell.innerText;
+
+            // Check Date Match (partial text match works for YYYY-MM-DD vs ISO string)
+            const dateMatch = dateText.toLowerCase().indexOf(dateInput) > -1;
+
+            // Check Type Match (exact match or 'all')
+            const typeMatch = (typeInput === "all") || (typeText.trim().toLowerCase() === typeInput);
+
+            if (dateMatch && typeMatch) {
+              row.style.display = "";
+              visibleCount++;
+            } else {
+              row.style.display = "none";
+            }
+          }
+        }
+
+        // Update the "Total Sent" counter
+        document.getElementById("total-count").innerText = visibleCount;
+      }
+
+      function sortTable(columnIndex) {
+        const table = document.getElementById("notifications-table");
+        const tbody = table.querySelector("tbody");
+        // Convert to array to sort, filtering out any "no-data" rows just in case
+        const rows = Array.from(tbody.querySelectorAll("tr")).filter(r => r.id !== "no-data-row");
+
+        if (rows.length === 0) return;
+
+        const header = table.querySelectorAll("th")[columnIndex];
+        const currentSort = header.getAttribute("aria-sort");
+        const newSort = currentSort === "ascending" ? "descending" : "ascending";
+
+        // Reset all headers
+        table.querySelectorAll("th").forEach(th => th.setAttribute("aria-sort", "none"));
+        header.setAttribute("aria-sort", newSort);
+
+        // Sort logic
+        rows.sort((rowA, rowB) => {
+          const cellA = rowA.cells[columnIndex].innerText.trim().toLowerCase();
+          const cellB = rowB.cells[columnIndex].innerText.trim().toLowerCase();
+
+          if (cellA < cellB) return newSort === "ascending" ? -1 : 1;
+          if (cellA > cellB) return newSort === "ascending" ? 1 : -1;
+          return 0;
+        });
+
+        // Re-append sorted rows (hidden rows remain hidden but move position in DOM)
+        rows.forEach(row => tbody.appendChild(row));
+      }
+    </script>
   </body>
 </html>

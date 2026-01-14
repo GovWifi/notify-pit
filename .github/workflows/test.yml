@@ -25,16 +25,12 @@ jobs:
             - name: Build and Test
               run: make test
 
-            # - name: Updating coverage permissions
-            #   if: always() # Run even if tests fail, so we can still see coverage if generated
-            #   run: sudo chown -R $USER:$USER notify_pit/app
-
             - name: Post Coverage Comment
               id: coverage
               if: success()
               uses: MishaKav/pytest-coverage-comment@main
               with:
-                  pytest-xml-coverage-path: app/tests/coverage.xml
+                  pytest-xml-coverage-path: ../app/tests/coverage.xml
                   title: "Coverage Report"
                   badge-title: "Coverage"
                   hide-comment: false

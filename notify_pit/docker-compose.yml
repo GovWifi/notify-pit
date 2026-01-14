@@ -1,0 +1,28 @@
+services:
+  # The Application Service (Builds the 'production' stage)
+  app:
+    build:
+      context: .
+      target: production
+    ports:
+      - "8000:8000"
+    environment:
+      - NOTIFY_SECRET=3d844edf-8d35-48ac-975b-e847b4f122b0
+    volumes:
+      - ./app:/app/app
+
+  # The Test Runner Service (Builds the 'test' stage)
+  tests:
+    build:
+      context: .
+      target: test
+    environment:
+      # Use the service name 'app' to talk to the notification service
+      - BASE_URL=http://app:8000
+    volumes:
+      # Mount tests so you can edit them locally and rerun without rebuilding
+      - ./tests:/app/tests
+    depends_on:
+      - app
+    # Run pytest using the Chromium browser engine
+    command: pytest --browser chromium

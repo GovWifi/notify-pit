@@ -3,31 +3,30 @@ PWD := $(shell pwd)
 
 .PHONY: all build test run clean
 
-# Default target: run tests
 all: test
 
-# Build the Docker image
-# Docker's caching ensures this is fast/skipped if nothing has changed.
+# Build the images using Docker Compose
 build:
-	docker build -t $(IMAGE_NAME) .
+	docker compose build
 
-# Run the service locally on port 8000
-# Mounts 'app/' so code changes are reflected immediately (Hot Reload)
-run: build
-	docker run --rm \
-		-p 8000:8000 \
-		-v "$(PWD)/app:/app/app" \
-		$(IMAGE_NAME)
+# Run the application (Production mode, accessible at localhost:8000)
+run:
+	docker compose up app
 
-# Run the tests with coverage
-# Mounts 'app/' and 'tests/' so you can test latest changes instantly
-test: build
-	docker run --rm \
-		-v "$(PWD)/tests:/app/tests" \
-		-v "$(PWD)/app:/app/app" \
-		$(IMAGE_NAME) \
-		pytest --cov=app --cov-report=term --cov-report=xml:/app/app/coverage.xml tests/
+# Run the test suite
+# 1. Start the 'app' service in the background (-d)
+# 2. Run the 'tests' service to execute pytest
+# 3. Stop containers after tests finish
 
-# Stop and remove the image (optional cleanup)
+# Allow passing extra arguments to pytest (e.g. make test ARGS="--headed")
+ARGS ?=
+
+test:
+	docker compose up -d app
+	# We override the default command to include $(ARGS)
+	docker compose run --rm tests pytest --browser chromium $(ARGS)
+	docker compose down
+
+# Clean up containers and images
 clean:
-	docker rmi $(IMAGE_NAME) || true
+	docker compose down --rmi local

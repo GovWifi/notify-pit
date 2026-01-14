@@ -5,6 +5,9 @@
     <title>Notify.pit Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0c0c">
+
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
+
     <link href="{{ url_for('static', path='govuk-frontend-5.13.0.min.css') }}" rel="stylesheet">
     <style>
       .govuk-table__header button {
@@ -41,6 +44,21 @@
         margin-bottom: 30px;
         border-bottom: 1px solid #b1b4b6;
       }
+
+      /* Header Layout for Logo + Title */
+      .page-heading-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 30px;
+      }
+      .page-heading-logo {
+        width: 60px;
+        height: auto;
+        display: block;
+        object-fit: contain;
+      }
+
       /* Modal Styles */
       dialog {
         border: 5px solid #0b0c0c;
@@ -95,7 +113,11 @@
 
     <div class="govuk-width-container">
       <main class="govuk-main-wrapper" id="main-content" role="main">
-        <h1 class="govuk-heading-xl">Notification Dashboard</h1>
+
+        <div class="page-heading-container">
+            <img src="{{ url_for('static', path='notify-pit-project-icon.png') }}" alt="Notify.pit Logo" class="page-heading-logo">
+            <h1 class="govuk-heading-xl govuk-!-margin-bottom-0">Notification Dashboard</h1>
+        </div>
 
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-one-quarter">
@@ -113,7 +135,8 @@
             <div class="govuk-grid-column-three-quarters">
                  <p class="govuk-body">
                     <a href="/pit/notifications" class="govuk-link">View Raw JSON</a> |
-                    <a href="/docs" class="govuk-link">API Docs</a>
+                    <a href="/docs" class="govuk-link">API Docs</a> |
+                    <a href="https://github.com/GovWifi/notify-pit" class="govuk-link">GitHub</a>
                 </p>
             </div>
         </div>
@@ -123,12 +146,12 @@
             <div class="govuk-grid-column-one-half">
               <div class="govuk-form-group">
                 <label class="govuk-label" for="filter-date">
-                  Filter by Date (UTC)
+                  Filter by Date & Time (UTC)
                 </label>
                 <div id="filter-date-hint" class="govuk-hint">
-                  Select a specific date
+                  Select date and time
                 </div>
-                <input class="govuk-input" id="filter-date" name="filter-date" type="date" aria-describedby="filter-date-hint" oninput="filterTable()">
+                <input class="govuk-input" id="filter-date" name="filter-date" type="datetime-local" aria-describedby="filter-date-hint" oninput="filterTable()">
               </div>
             </div>
             <div class="govuk-grid-column-one-half">
@@ -247,7 +270,10 @@
           if (dateCell && typeCell) {
             const dateText = dateCell.textContent || dateCell.innerText;
             const typeText = typeCell.textContent || typeCell.innerText;
+
+            // Check Date Match (Partial Match works: '2026-01-14T11:14' is in '2026-01-14T11:14:30...')
             const dateMatch = dateText.toLowerCase().indexOf(dateInput) > -1;
+
             const typeMatch = (typeInput === "all") || (typeText.trim().toLowerCase() === typeInput);
 
             if (dateMatch && typeMatch) {

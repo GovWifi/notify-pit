@@ -1,7 +1,6 @@
-from datetime import datetime, timezone
-import uuid
-from pydantic import BaseModel, UUID4
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+from pydantic import UUID4, BaseModel
 
 
 class NotificationBase(BaseModel):

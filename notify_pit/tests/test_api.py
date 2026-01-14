@@ -1,6 +1,7 @@
-import jwt
 import time
-import pytest
+
+import jwt
+
 from app.auth import SECRET
 
 
@@ -72,7 +73,9 @@ def test_letter_endpoint_success(client):
 
 
 def test_received_text_signup_flow(client):
-    """Test Branch 1: Personalisation with username/password becomes the message content."""
+    """Test Branch 1: Personalisation with username/password becomes the message
+    content.
+    """
     client.delete("/pit/reset")  # Ensure clean state
     token = get_token()
 

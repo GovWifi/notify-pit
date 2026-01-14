@@ -1,13 +1,15 @@
-from typing import Any
-from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, Depends, Request
-from fastapi.templating import Jinja2Templates
-from .auth import validate_notify_jwt
-from .models import SmsRequest, EmailRequest, LetterRequest
-from datetime import datetime, timezone
-import uuid
-import os
 import json
+import os
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import Depends, FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
+from .auth import validate_notify_jwt
+from .models import EmailRequest, LetterRequest, SmsRequest
 
 app = FastAPI(title="Notify.pit")
 notifications_db: list[dict[str, Any]] = []

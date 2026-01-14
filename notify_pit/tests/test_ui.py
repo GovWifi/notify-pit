@@ -1,10 +1,11 @@
-import pytest
-from playwright.sync_api import Page, expect
-import uuid
 import os
+import time
+import uuid
+
 import httpx
 import jwt
-import time
+import pytest
+from playwright.sync_api import Page, expect
 
 # Get the URL from environment (Docker) or default to localhost (Local)
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")

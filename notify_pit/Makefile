@@ -1,7 +1,7 @@
 IMAGE_NAME := notify-pit
 PWD := $(shell pwd)
 
-.PHONY: all build test run clean
+.PHONY: all build test run clean lint format localuitest
 
 all: test
 
@@ -30,6 +30,16 @@ localuitest:
 	@echo "Service is up! Running UI tests..."
 	# Run the tests visually
 	pytest tests/test_ui.py --headed --slowmo 1000
+
+# Check code style (used in CI)
+lint:
+	ruff check .
+	ruff format --check .
+
+# Fix code style automatically (run this locally)
+format:
+	ruff check --fix .
+	ruff format .
 
 # Clean up containers and images
 clean:

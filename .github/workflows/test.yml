@@ -22,6 +22,12 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
+            - name: Install & Run Linter
+              run: |
+                  pip install ruff
+                  ruff check .
+                  ruff format --check .
+
             - name: Build and Test
               run: make test
 

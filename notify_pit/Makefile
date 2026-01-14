@@ -13,19 +13,23 @@ build:
 run:
 	docker compose up app
 
-# Run the test suite
-# 1. Start the 'app' service in the background (-d)
-# 2. Run the 'tests' service to execute pytest
-# 3. Stop containers after tests finish
-
-# Allow passing extra arguments to pytest (e.g. make test ARGS="--headed")
-ARGS ?=
-
+# Run all tests (unit+UI):
 test:
 	docker compose up -d app
-	# We override the default command to include $(ARGS)
-	docker compose run --rm tests pytest --browser chromium $(ARGS)
+	docker compose run --rm tests pytest --browser chromium
 	docker compose down
+
+# Usage: make localuitest
+# Runs the UI tests locally against a manually started service
+# Install local deps if needed (optional, safe to remove if already installed)
+# pip install -r requirements-dev.txt
+# playwright install chromium
+localuitest:
+	@echo "Waiting for Notify.pit to be ready at http://localhost:8000..."
+	@bash -c 'while ! curl -s http://localhost:8000/healthcheck > /dev/null; do sleep 1; done'
+	@echo "Service is up! Running UI tests..."
+	# Run the tests visually
+	pytest tests/test_ui.py --headed --slowmo 1000
 
 # Clean up containers and images
 clean:

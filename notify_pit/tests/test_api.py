@@ -1,8 +1,6 @@
 import time
-import uuid
 
 import jwt
-import pytest
 
 from app.auth import SECRET
 

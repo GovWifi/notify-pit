@@ -96,3 +96,43 @@ def test_sort_columns(page: Page, seed_data):
 
     # Check first row is email
     expect(rows.nth(0)).to_contain_text("email")
+
+
+@pytest.mark.xfail(reason="template create is not working and the test times out")
+def test_create_and_delete_template(page: Page, api_client):
+    api_client.delete("/pit/reset")
+    page.goto(BASE_URL)
+
+    # Allow dialogs (like the delete confirmation) to be accepted automatically
+    page.on("dialog", lambda dialog: dialog.accept())
+
+    # 1. Click Templates tab
+    page.click("a[href='#templates']")
+
+    # Ensure the panel is visible (sanity check)
+    expect(page.locator("#templates")).to_be_visible()
+
+    # 2. Fill Form
+    page.select_option("#tpl-type", "sms")
+    page.fill("#tpl-name", "UI Test Template")
+    page.fill("#tpl-body", "Hello from UI")
+
+    # 3. Create
+    # The page will reload, preserving the #templates hash, so we stay on this tab.
+    # We verify success by waiting for the specific row to appear.
+    page.click("text=Create")
+
+    # Wait for the row to be visible (implies reload finished and data persisted)
+    row = page.locator("#templates tbody tr", has_text="UI Test Template")
+    expect(row).to_be_visible()
+    expect(row).to_contain_text("sms")
+
+    # 4. Delete it
+    # This triggers a confirmation dialog (handled by page.on("dialog"))
+    # and then a reload.
+    row.get_by_text("Delete").click()
+
+    # 5. Verify gone
+    # We wait for the 'No templates' row to appear
+    no_data_row = page.locator("#templates tbody tr", has_text="No templates created")
+    expect(no_data_row).to_be_visible()

@@ -92,10 +92,14 @@
         border: 1px solid #b1b4b6;
         font-size: 14px;
       }
+
+      .govuk-tabs__panel {
+          border-top: 1px solid #b1b4b6; /* Fix visual disconnect in some viewports */
+      }
     </style>
   </head>
   <body class="govuk-template__body ">
-    <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
+    <script>document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' govuk-frontend-supported' : '');</script>
 
     <header class="govuk-header" role="banner" data-module="govuk-header">
       <div class="govuk-header__container govuk-width-container">
@@ -119,109 +123,203 @@
             <h1 class="govuk-heading-xl govuk-!-margin-bottom-0">Notification Dashboard</h1>
         </div>
 
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-one-quarter">
-                <div class="govuk-summary-card">
-                    <div class="govuk-summary-card__title-wrapper">
-                        <h2 class="govuk-summary-card__title">Total Sent</h2>
-                    </div>
-                    <div class="govuk-summary-card__content">
-                        <p class="govuk-body govuk-!-font-size-48 govuk-!-font-weight-bold" id="total-count">
-                            {{ notifications|length }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="govuk-grid-column-three-quarters">
-                 <p class="govuk-body">
-                    <a href="/pit/notifications" class="govuk-link">View Raw JSON</a> |
-                    <a href="/docs" class="govuk-link">API Docs</a> |
-                    <a href="https://github.com/GovWifi/notify-pit" class="govuk-link">GitHub</a>
-                </p>
-            </div>
-        </div>
+        <div class="govuk-tabs" data-module="govuk-tabs">
+          <h2 class="govuk-tabs__title">
+            Contents
+          </h2>
+          <ul class="govuk-tabs__list">
+            <li class="govuk-tabs__list-item govuk-tabs__list-item--selected">
+              <a class="govuk-tabs__tab" href="#notifications">
+                Notifications
+              </a>
+            </li>
+            <li class="govuk-tabs__list-item">
+              <a class="govuk-tabs__tab" href="#templates">
+                Templates
+              </a>
+            </li>
+          </ul>
 
-        <div class="filter-container">
-          <div class="govuk-grid-row">
-            <div class="govuk-grid-column-one-half">
-              <div class="govuk-form-group">
-                <label class="govuk-label" for="filter-date">
-                  Filter by Date & Time (UTC)
-                </label>
-                <div id="filter-date-hint" class="govuk-hint">
-                  Select date and time
+          <div class="govuk-tabs__panel" id="notifications">
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-one-quarter">
+                    <div class="govuk-summary-card">
+                        <div class="govuk-summary-card__title-wrapper">
+                            <h2 class="govuk-summary-card__title">Total Sent</h2>
+                        </div>
+                        <div class="govuk-summary-card__content">
+                            <p class="govuk-body govuk-!-font-size-48 govuk-!-font-weight-bold" id="total-count">
+                                {{ notifications|length }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
-                <input class="govuk-input" id="filter-date" name="filter-date" type="datetime-local" aria-describedby="filter-date-hint" oninput="filterTable()">
+                <div class="govuk-grid-column-three-quarters">
+                     <p class="govuk-body">
+                        <a href="/pit/notifications" class="govuk-link">View Raw JSON</a> |
+                        <a href="/docs" class="govuk-link">API Docs</a> |
+                        <a href="https://github.com/GovWifi/notify-pit" class="govuk-link">GitHub</a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="filter-container">
+              <div class="govuk-grid-row">
+                <div class="govuk-grid-column-one-half">
+                  <div class="govuk-form-group">
+                    <label class="govuk-label" for="filter-date">
+                      Filter by Date & Time (UTC)
+                    </label>
+                    <div id="filter-date-hint" class="govuk-hint">
+                      Select date and time
+                    </div>
+                    <input class="govuk-input" id="filter-date" name="filter-date" type="datetime-local" aria-describedby="filter-date-hint" oninput="filterTable()">
+                  </div>
+                </div>
+                <div class="govuk-grid-column-one-half">
+                  <div class="govuk-form-group">
+                    <label class="govuk-label" for="filter-type">
+                      Filter by Type
+                    </label>
+                    <div class="govuk-hint">
+                      Select channel
+                    </div>
+                    <select class="govuk-select" id="filter-type" name="filter-type" onchange="filterTable()" style="width: 100%;">
+                      <option value="all">All</option>
+                      <option value="sms">SMS</option>
+                      <option value="email">Email</option>
+                      <option value="letter">Letter</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="govuk-grid-column-one-half">
-              <div class="govuk-form-group">
-                <label class="govuk-label" for="filter-type">
-                  Filter by Type
-                </label>
-                <div class="govuk-hint">
-                  Select channel
+
+            <table class="govuk-table" id="notifications-table">
+              <caption class="govuk-table__caption govuk-table__caption--m">Recent Notifications</caption>
+              <thead class="govuk-table__head">
+                <tr class="govuk-table__row">
+                  <th scope="col" class="govuk-table__header" aria-sort="descending" data-column="0">
+                    <button onclick="sortTable(0)">Time (UTC)</button>
+                  </th>
+                  <th scope="col" class="govuk-table__header" aria-sort="none" data-column="1">
+                    <button onclick="sortTable(1)">Type</button>
+                  </th>
+                  <th scope="col" class="govuk-table__header" aria-sort="none" data-column="2">
+                    <button onclick="sortTable(2)">Recipient</button>
+                  </th>
+                  <th scope="col" class="govuk-table__header" aria-sort="none" data-column="3">
+                    <button onclick="sortTable(3)">Reference</button>
+                  </th>
+                  <th scope="col" class="govuk-table__header" aria-sort="none" data-column="4">
+                    <button onclick="sortTable(4)">ID</button>
+                  </th>
+                  <th scope="col" class="govuk-table__header">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="govuk-table__body">
+                {% for n in notifications|reverse %}
+                <tr class="govuk-table__row">
+                  <td class="govuk-table__cell">{{ n.created_at or 'N/A' }}</td>
+                  <td class="govuk-table__cell">
+                      <strong class="govuk-tag {{ 'govuk-tag--blue' if n.type == 'email' else 'govuk-tag--green' }}">
+                          {{ n.type }}
+                      </strong>
+                  </td>
+                  <td class="govuk-table__cell">
+                      {{ n.phone_number or n.email_address or n.personalisation.address_line_1 }}
+                  </td>
+                  <td class="govuk-table__cell">{{ n.reference or '-' }}</td>
+                  <td class="govuk-table__cell govuk-!-font-size-14">{{ n.id }}</td>
+                  <td class="govuk-table__cell">
+                    <a href="#" class="govuk-link" onclick="viewJson(event, '{{ n.id }}')">View JSON</a>
+                  </td>
+                </tr>
+                {% else %}
+                <tr class="govuk-table__row" id="no-data-row">
+                    <td class="govuk-table__cell" colspan="6">No notifications received yet.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="govuk-tabs__panel govuk-tabs__panel--hidden" id="templates">
+            <h2 class="govuk-heading-l">Templates</h2>
+
+            <div class="govuk-grid-row">
+                <div class="govuk-grid-column-one-third">
+                    <div class="govuk-summary-card">
+                        <div class="govuk-summary-card__title-wrapper">
+                            <h3 class="govuk-summary-card__title">Create Template</h3>
+                        </div>
+                        <div class="govuk-summary-card__content">
+                            <form id="create-template-form" onsubmit="createTemplate(event)">
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label" for="tpl-type">Type</label>
+                                    <select class="govuk-select" id="tpl-type" name="type" style="width: 100%;" onchange="toggleSubject()">
+                                        <option value="sms">SMS</option>
+                                        <option value="email">Email</option>
+                                        <option value="letter">Letter</option>
+                                    </select>
+                                </div>
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label" for="tpl-name">Name</label>
+                                    <input class="govuk-input" id="tpl-name" name="name" type="text" required>
+                                </div>
+                                <div class="govuk-form-group" id="subject-group" style="display: none;">
+                                    <label class="govuk-label" for="tpl-subject">Subject</label>
+                                    <input class="govuk-input" id="tpl-subject" name="subject" type="text">
+                                </div>
+                                <div class="govuk-form-group">
+                                    <label class="govuk-label" for="tpl-body">Body</label>
+                                    <textarea class="govuk-textarea" id="tpl-body" name="body" rows="5" required></textarea>
+                                </div>
+                                <button type="submit" class="govuk-button" data-module="govuk-button">Create</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
-                <select class="govuk-select" id="filter-type" name="filter-type" onchange="filterTable()" style="width: 100%;">
-                  <option value="all">All</option>
-                  <option value="sms">SMS</option>
-                  <option value="email">Email</option>
-                  <option value="letter">Letter</option>
-                </select>
-              </div>
+
+                <div class="govuk-grid-column-two-thirds">
+                    <table class="govuk-table">
+                      <caption class="govuk-table__caption govuk-table__caption--m">Existing Templates</caption>
+                      <thead class="govuk-table__head">
+                        <tr class="govuk-table__row">
+                          <th scope="col" class="govuk-table__header">Name</th>
+                          <th scope="col" class="govuk-table__header">Type</th>
+                          <th scope="col" class="govuk-table__header">ID</th>
+                          <th scope="col" class="govuk-table__header">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody class="govuk-table__body">
+                        {% for t in templates %}
+                        <tr class="govuk-table__row">
+                          <td class="govuk-table__cell govuk-!-font-weight-bold">{{ t.name }}</td>
+                          <td class="govuk-table__cell">
+                              <strong class="govuk-tag {{ 'govuk-tag--blue' if t.type == 'email' else 'govuk-tag--green' }}">
+                                  {{ t.type }}
+                              </strong>
+                          </td>
+                          <td class="govuk-table__cell govuk-!-font-size-14">{{ t.id }}</td>
+                          <td class="govuk-table__cell">
+                              <a href="#" class="govuk-link govuk-link--no-visited-state" style="color:#d4351c;" onclick="deleteTemplate(event, '{{ t.id }}')">Delete</a>
+                          </td>
+                        </tr>
+                        {% else %}
+                        <tr class="govuk-table__row">
+                            <td class="govuk-table__cell" colspan="4">No templates created.</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                </div>
             </div>
           </div>
         </div>
 
-        <table class="govuk-table" id="notifications-table">
-          <caption class="govuk-table__caption govuk-table__caption--m">Recent Notifications</caption>
-          <thead class="govuk-table__head">
-            <tr class="govuk-table__row">
-              <th scope="col" class="govuk-table__header" aria-sort="descending" data-column="0">
-                <button onclick="sortTable(0)">Time (UTC)</button>
-              </th>
-              <th scope="col" class="govuk-table__header" aria-sort="none" data-column="1">
-                <button onclick="sortTable(1)">Type</button>
-              </th>
-              <th scope="col" class="govuk-table__header" aria-sort="none" data-column="2">
-                <button onclick="sortTable(2)">Recipient</button>
-              </th>
-              <th scope="col" class="govuk-table__header" aria-sort="none" data-column="3">
-                <button onclick="sortTable(3)">Reference</button>
-              </th>
-              <th scope="col" class="govuk-table__header" aria-sort="none" data-column="4">
-                <button onclick="sortTable(4)">ID</button>
-              </th>
-              <th scope="col" class="govuk-table__header">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody class="govuk-table__body">
-            {% for n in notifications|reverse %}
-            <tr class="govuk-table__row">
-              <td class="govuk-table__cell">{{ n.created_at or 'N/A' }}</td>
-              <td class="govuk-table__cell">
-                  <strong class="govuk-tag {{ 'govuk-tag--blue' if n.type == 'email' else 'govuk-tag--green' }}">
-                      {{ n.type }}
-                  </strong>
-              </td>
-              <td class="govuk-table__cell">
-                  {{ n.phone_number or n.email_address or n.personalisation.address_line_1 }}
-              </td>
-              <td class="govuk-table__cell">{{ n.reference or '-' }}</td>
-              <td class="govuk-table__cell govuk-!-font-size-14">{{ n.id }}</td>
-              <td class="govuk-table__cell">
-                <a href="#" class="govuk-link" onclick="viewJson(event, '{{ n.id }}')">View JSON</a>
-              </td>
-            </tr>
-            {% else %}
-            <tr class="govuk-table__row" id="no-data-row">
-                <td class="govuk-table__cell" colspan="6">No notifications received yet.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
       </main>
     </div>
 
@@ -234,6 +332,11 @@
             <pre id="json-content" class="json-view"></pre>
         </div>
     </dialog>
+
+    <script type="module">
+        import { initAll } from "{{ url_for('static', path='govuk-frontend-5.13.0.min.js') }}";
+        initAll();
+    </script>
 
     <script>
       // Load raw data from backend
@@ -311,6 +414,57 @@
         });
 
         rows.forEach(row => tbody.appendChild(row));
+      }
+
+      // Template UI Logic
+      function toggleSubject() {
+          const type = document.getElementById('tpl-type').value;
+          const subjectGroup = document.getElementById('subject-group');
+          if (type === 'email') {
+              subjectGroup.style.display = 'block';
+          } else {
+              subjectGroup.style.display = 'none';
+          }
+      }
+
+      async function createTemplate(e) {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData.entries());
+
+          try {
+              const response = await fetch('/pit/template', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data)
+              });
+
+              if (response.ok) {
+                  window.location.reload();
+              } else {
+                  alert("Failed to create template");
+              }
+          } catch (err) {
+              console.error(err);
+              alert("Error creating template");
+          }
+      }
+
+      async function deleteTemplate(e, id) {
+          e.preventDefault();
+          if (!confirm("Are you sure you want to delete this template?")) return;
+
+          try {
+              const response = await fetch(`/pit/template/${id}`, { method: 'DELETE' });
+              if (response.ok) {
+                  window.location.reload();
+              } else {
+                  alert("Failed to delete template");
+              }
+          } catch (err) {
+              console.error(err);
+              alert("Error deleting template");
+          }
       }
     </script>
   </body>

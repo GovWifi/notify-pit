@@ -19,3 +19,10 @@ class EmailRequest(NotificationBase):
 
 class LetterRequest(NotificationBase):
     personalisation: Dict[str, Any]
+
+
+class CreateTemplateRequest(BaseModel):
+    type: str
+    name: str
+    body: str
+    subject: Optional[str] = None

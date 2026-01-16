@@ -1,6 +1,8 @@
 import time
+import uuid
 
 import jwt
+import pytest
 
 from app.auth import SECRET
 
@@ -156,6 +158,99 @@ def test_received_text_fallback_flow(client):
     assert msgs[0]["content"] == "Direct Content"
 
 
+# --- TEMPLATE TESTS ---
+
+
+def test_template_lifecycle(client):
+    client.delete("/pit/reset")
+    token = get_token()
+
+    # 1. Create a template via PIT API
+    create_payload = {
+        "type": "email",
+        "name": "Test Template",
+        "subject": "Hello ((name))",
+        "body": "Welcome to ((service)). Your code is ((code)).",
+    }
+    r1 = client.post("/pit/template", json=create_payload)
+    assert r1.status_code == 201
+    template = r1.json()
+    t_id = template["id"]
+    assert template["body"] == create_payload["body"]
+
+    # 2. Get All Templates (Public API)
+    r2 = client.get("/v2/templates", headers={"Authorization": f"Bearer {token}"})
+    assert r2.status_code == 200
+    assert len(r2.json()["templates"]) == 1
+    assert r2.json()["templates"][0]["id"] == t_id
+
+    # 2b. Filter by type
+    r2_filtered = client.get(
+        "/v2/templates?type=email", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert len(r2_filtered.json()["templates"]) == 1
+    r2_filtered_empty = client.get(
+        "/v2/templates?type=sms", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert len(r2_filtered_empty.json()["templates"]) == 0
+
+    # 3. Get Template By ID (Public API)
+    r3 = client.get(
+        f"/v2/template/{t_id}", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert r3.status_code == 200
+    assert r3.json()["id"] == t_id
+
+    # 4. Get Template Version (Public API)
+    r4 = client.get(
+        f"/v2/template/{t_id}/version/1", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert r4.status_code == 200
+    assert r4.json()["id"] == t_id
+
+    # 5. Preview Template (Public API)
+    preview_payload = {
+        "personalisation": {"name": "User", "service": "Notify", "code": "12345"}
+    }
+    r5 = client.post(
+        f"/v2/template/{t_id}/preview",
+        json=preview_payload,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r5.status_code == 200
+    preview = r5.json()
+    assert preview["body"] == "Welcome to Notify. Your code is 12345."
+    assert preview["subject"] == "Hello User"
+
+    # 6. Delete Template (PIT API)
+    r6 = client.delete(f"/pit/template/{t_id}")
+    assert r6.status_code == 200
+
+    # 7. Verify deletion
+    r7 = client.get(
+        f"/v2/template/{t_id}", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert r7.status_code == 404
+
+
+def test_template_preview_no_personalisation(client):
+    client.delete("/pit/reset")
+    token = get_token()
+    t = client.post(
+        "/pit/template",
+        json={"type": "sms", "name": "Simple", "body": "Hello ((name))"},
+    ).json()
+
+    # Preview with NO body
+    r = client.post(
+        f"/v2/template/{t['id']}/preview",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    # Should remain as placeholder if no data provided
+    assert r.json()["body"] == "Hello ((name))"
+
+
 # --- AUTH & ERROR TESTS ---
 
 
@@ -189,8 +284,15 @@ def test_pit_reset(client):
         },
         headers={"Authorization": f"Bearer {token}"},
     )
+    client.post(
+        "/pit/template",
+        json={"type": "sms", "name": "T1", "body": "B"},
+    )
 
     client.delete("/pit/reset")
 
     res = client.get("/pit/notifications")
     assert res.json() == []
+    # Check template list directly via v2 to ensure it's empty
+    res_t = client.get("/v2/templates", headers={"Authorization": f"Bearer {token}"})
+    assert res_t.json()["templates"] == []

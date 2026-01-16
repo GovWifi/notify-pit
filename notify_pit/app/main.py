@@ -233,6 +233,26 @@ async def create_pit_template(payload: CreateTemplateRequest):
     return template
 
 
+@app.put("/pit/template/{template_id}")
+async def update_pit_template(template_id: str, payload: CreateTemplateRequest):
+    """Internal endpoint to update a template."""
+    for t in templates_db:
+        if t["id"] == template_id:
+            data = payload.model_dump()
+            t.update(
+                {
+                    "type": data["type"],
+                    "name": data["name"],
+                    "body": data["body"],
+                    "subject": data.get("subject"),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "version": t["version"] + 1,
+                }
+            )
+            return t
+    raise HTTPException(status_code=404, detail="Template not found")
+
+
 @app.delete("/pit/template/{template_id}")
 async def delete_pit_template(template_id: str):
     """Internal endpoint to delete a template."""

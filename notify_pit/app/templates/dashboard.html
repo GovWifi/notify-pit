@@ -253,10 +253,11 @@
                 <div class="govuk-grid-column-one-third">
                     <div class="govuk-summary-card">
                         <div class="govuk-summary-card__title-wrapper">
-                            <h3 class="govuk-summary-card__title">Create Template</h3>
+                            <h3 class="govuk-summary-card__title" id="template-card-title">Create Template</h3>
                         </div>
                         <div class="govuk-summary-card__content">
-                            <form id="create-template-form" onsubmit="createTemplate(event)">
+                            <form id="create-template-form" onsubmit="saveTemplate(event)">
+                                <input type="hidden" id="tpl-id" name="id">
                                 <div class="govuk-form-group">
                                     <label class="govuk-label" for="tpl-type">Type</label>
                                     <select class="govuk-select" id="tpl-type" name="type" style="width: 100%;" onchange="toggleSubject()">
@@ -277,7 +278,10 @@
                                     <label class="govuk-label" for="tpl-body">Body</label>
                                     <textarea class="govuk-textarea" id="tpl-body" name="body" rows="5" required></textarea>
                                 </div>
-                                <button type="submit" class="govuk-button" data-module="govuk-button">Create</button>
+                                <div class="govuk-button-group">
+                                    <button type="submit" class="govuk-button" data-module="govuk-button" id="btn-save">Create</button>
+                                    <button type="button" class="govuk-button govuk-button--secondary" id="btn-cancel" style="display:none;" onclick="resetTemplateForm()">Cancel</button>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -291,7 +295,7 @@
                           <th scope="col" class="govuk-table__header">Name</th>
                           <th scope="col" class="govuk-table__header">Type</th>
                           <th scope="col" class="govuk-table__header">ID</th>
-                          <th scope="col" class="govuk-table__header">Action</th>
+                          <th scope="col" class="govuk-table__header">Actions</th>
                         </tr>
                       </thead>
                       <tbody class="govuk-table__body">
@@ -305,7 +309,8 @@
                           </td>
                           <td class="govuk-table__cell govuk-!-font-size-14">{{ t.id }}</td>
                           <td class="govuk-table__cell">
-                              <a href="#" class="govuk-link govuk-link--no-visited-state" style="color:#d4351c;" onclick="deleteTemplate(event, '{{ t.id }}')">Delete</a>
+                              <a href="#" class="govuk-link" onclick="editTemplate(event, '{{ t.id }}')">Edit</a>
+                              <a href="#" class="govuk-link govuk-link--no-visited-state" style="color:#d4351c; margin-left: 10px;" onclick="deleteTemplate(event, '{{ t.id }}')">Delete</a>
                           </td>
                         </tr>
                         {% else %}
@@ -341,6 +346,7 @@
     <script>
       // Load raw data from backend
       const rawData = {{ notifications_json | safe }};
+      const templatesData = {{ templates_json | safe }};
 
       function viewJson(e, id) {
         e.preventDefault();
@@ -427,14 +433,50 @@
           }
       }
 
-      async function createTemplate(e) {
+      function editTemplate(e, id) {
           e.preventDefault();
+          const t = templatesData.find(x => x.id === id);
+          if (!t) return;
+
+          document.getElementById('tpl-id').value = t.id;
+          document.getElementById('tpl-type').value = t.type;
+          document.getElementById('tpl-name').value = t.name;
+          document.getElementById('tpl-body').value = t.body;
+
+          toggleSubject();
+          if (t.subject) {
+              document.getElementById('tpl-subject').value = t.subject;
+          }
+
+          document.getElementById('template-card-title').textContent = "Edit Template";
+          document.getElementById('btn-save').textContent = "Save";
+          document.getElementById('btn-cancel').style.display = 'inline-block';
+      }
+
+      function resetTemplateForm() {
+          document.getElementById('create-template-form').reset();
+          document.getElementById('tpl-id').value = "";
+          document.getElementById('template-card-title').textContent = "Create Template";
+          document.getElementById('btn-save').textContent = "Create";
+          document.getElementById('btn-cancel').style.display = 'none';
+          toggleSubject();
+      }
+
+      async function saveTemplate(e) {
+          e.preventDefault();
+          const id = document.getElementById('tpl-id').value;
           const formData = new FormData(e.target);
           const data = Object.fromEntries(formData.entries());
 
+          // Remove ID from data payload, it's used for logic but not needed in body for CREATE/UPDATE request body structure in models
+          delete data.id;
+
+          const method = id ? 'PUT' : 'POST';
+          const url = id ? `/pit/template/${id}` : '/pit/template';
+
           try {
-              const response = await fetch('/pit/template', {
-                  method: 'POST',
+              const response = await fetch(url, {
+                  method: method,
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(data)
               });
@@ -442,11 +484,11 @@
               if (response.ok) {
                   window.location.reload();
               } else {
-                  alert("Failed to create template");
+                  alert(`Failed to ${id ? 'update' : 'create'} template`);
               }
           } catch (err) {
               console.error(err);
-              alert("Error creating template");
+              alert(`Error ${id ? 'updating' : 'creating'} template`);
           }
       }
 

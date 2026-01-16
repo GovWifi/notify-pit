@@ -126,12 +126,26 @@ def test_create_and_delete_template(page: Page, api_client):
     expect(row).to_be_visible()
     expect(row).to_contain_text("sms")
 
-    # 4. Delete it
-    # This triggers a confirmation dialog (handled by page.on("dialog"))
-    # and then a reload.
-    row.get_by_text("Delete").click()
+    # 4. Edit it
+    row.get_by_text("Edit").click()
 
-    # 5. Verify gone
+    # Check form is populated
+    expect(page.locator("#tpl-name")).to_have_value("UI Test Template")
+    expect(page.locator("#btn-save")).to_have_text("Save")
+    expect(page.locator("#btn-cancel")).to_be_visible()
+
+    # Modify
+    page.fill("#tpl-name", "Updated Template Name")
+    page.get_by_role("button", name="Save").click()
+
+    # Wait for row to update
+    updated_row = page.locator("#templates tbody tr", has_text="Updated Template Name")
+    expect(updated_row).to_be_visible()
+
+    # 5. Delete it
+    updated_row.get_by_text("Delete").click()
+
+    # 6. Verify gone
     # After reload, the row should be replaced by the "No templates" message.
     no_data_row = page.locator("#templates tbody tr", has_text="No templates created")
     expect(no_data_row).to_be_visible()

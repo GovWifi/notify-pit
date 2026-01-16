@@ -1,6 +1,8 @@
 import time
+import uuid
 
 import jwt
+import pytest
 
 from app.auth import SECRET
 
@@ -247,6 +249,40 @@ def test_template_preview_no_personalisation(client):
     assert r.status_code == 200
     # Should remain as placeholder if no data provided
     assert r.json()["body"] == "Hello ((name))"
+
+
+def test_update_template_success(client):
+    client.delete("/pit/reset")
+    token = get_token()
+
+    # 1. Create
+    t = client.post(
+        "/pit/template",
+        json={"type": "sms", "name": "Original", "body": "Body"},
+    ).json()
+    t_id = t["id"]
+
+    # 2. Update
+    update_payload = {"type": "sms", "name": "Updated", "body": "New Body"}
+    r = client.put(f"/pit/template/{t_id}", json=update_payload)
+    assert r.status_code == 200
+    updated = r.json()
+    assert updated["name"] == "Updated"
+    assert updated["version"] == 2
+
+    # 3. Verify fetch
+    r_fetch = client.get(
+        f"/v2/template/{t_id}", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert r_fetch.json()["name"] == "Updated"
+
+
+def test_update_template_not_found(client):
+    client.delete("/pit/reset")
+    r = client.put(
+        "/pit/template/invalid-id", json={"type": "sms", "name": "N", "body": "B"}
+    )
+    assert r.status_code == 404
 
 
 # --- AUTH & ERROR TESTS ---

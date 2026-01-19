@@ -2,7 +2,7 @@ import json
 import os
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -11,9 +11,9 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from .auth import validate_notify_jwt
-from .models import CreateTemplateRequest, EmailRequest, LetterRequest, SmsRequest
-from .database import engine, Base, get_db
+from .database import Base, engine, get_db
 from .db_models import Notification, Template
+from .models import CreateTemplateRequest, EmailRequest, LetterRequest, SmsRequest
 
 # Create tables on startup
 Base.metadata.create_all(bind=engine)

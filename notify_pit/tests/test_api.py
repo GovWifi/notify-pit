@@ -1,8 +1,8 @@
 import time
-import pytest
+
 import jwt
+
 from app.auth import SECRET
-from app.db_models import Notification  # Import the model
 
 
 def get_token(secret=SECRET, iat=None):

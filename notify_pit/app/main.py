@@ -211,6 +211,12 @@ async def get_pit_notifications():
     return notifications_db
 
 
+@app.get("/pit/templates")
+async def get_pit_templates():
+    """Internal endpoint to list all templates without auth for the dashboard."""
+    return templates_db
+
+
 @app.post("/pit/template", status_code=201)
 async def create_pit_template(payload: CreateTemplateRequest):
     """Internal endpoint to create a template for testing."""

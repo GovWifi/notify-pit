@@ -129,12 +129,12 @@
           </h2>
           <ul class="govuk-tabs__list">
             <li class="govuk-tabs__list-item govuk-tabs__list-item--selected">
-              <a class="govuk-tabs__tab" href="#notifications">
+              <a class="govuk-tabs__tab" href="#notifications" onclick="fetchNotifications()">
                 Notifications
               </a>
             </li>
             <li class="govuk-tabs__list-item">
-              <a class="govuk-tabs__tab" href="#templates">
+              <a class="govuk-tabs__tab" href="#templates" onclick="fetchTemplates()">
                 Templates
               </a>
             </li>
@@ -219,7 +219,7 @@
                   </th>
                 </tr>
               </thead>
-              <tbody class="govuk-table__body">
+              <tbody class="govuk-table__body" id="notifications-table-body">
                 {% for n in notifications|reverse %}
                 <tr class="govuk-table__row">
                   <td class="govuk-table__cell">{{ n.created_at or 'N/A' }}</td>
@@ -298,7 +298,7 @@
                           <th scope="col" class="govuk-table__header">Actions</th>
                         </tr>
                       </thead>
-                      <tbody class="govuk-table__body">
+                      <tbody class="govuk-table__body" id="templates-table-body">
                         {% for t in templates %}
                         <tr class="govuk-table__row">
                           <td class="govuk-table__cell govuk-!-font-weight-bold">{{ t.name }}</td>
@@ -344,9 +344,105 @@
     </script>
 
     <script>
-      // Load raw data from backend
-      const rawData = {{ notifications_json | safe }};
-      const templatesData = {{ templates_json | safe }};
+      // Make variables let so they can be updated via fetch
+      let rawData = {{ notifications_json | safe }};
+      let templatesData = {{ templates_json | safe }};
+
+      // --- FETCH FUNCTIONS ---
+
+      async function fetchNotifications() {
+          try {
+              const res = await fetch('/pit/notifications');
+              if (res.ok) {
+                  rawData = await res.json();
+                  renderNotificationsTable();
+              }
+          } catch (err) {
+              console.error("Failed to fetch notifications", err);
+          }
+      }
+
+      async function fetchTemplates() {
+          try {
+              const res = await fetch('/pit/templates');
+              if (res.ok) {
+                  const data = await res.json();
+                  templatesData = data;
+                  renderTemplatesTable();
+              }
+          } catch (err) {
+              console.error("Failed to fetch templates", err);
+          }
+      }
+
+      // --- RENDER FUNCTIONS ---
+
+      function renderNotificationsTable() {
+          const tbody = document.getElementById('notifications-table-body');
+          if (!tbody) return;
+          tbody.innerHTML = '';
+
+          // Update total count
+          const countEl = document.getElementById('total-count');
+          if (countEl) countEl.innerText = rawData.length;
+
+          const reversed = [...rawData].reverse();
+
+          if (reversed.length === 0) {
+              tbody.innerHTML = '<tr class="govuk-table__row" id="no-data-row"><td class="govuk-table__cell" colspan="6">No notifications received yet.</td></tr>';
+              return;
+          }
+
+          reversed.forEach(n => {
+              const tr = document.createElement('tr');
+              tr.className = 'govuk-table__row';
+
+              // Recipient logic
+              const recipient = n.phone_number || n.email_address || (n.personalisation ? n.personalisation.address_line_1 : '');
+
+              // Tag class
+              const tagClass = n.type === 'email' ? 'govuk-tag--blue' : 'govuk-tag--green';
+
+              tr.innerHTML = `
+                  <td class="govuk-table__cell">${n.created_at || 'N/A'}</td>
+                  <td class="govuk-table__cell"><strong class="govuk-tag ${tagClass}">${n.type}</strong></td>
+                  <td class="govuk-table__cell">${recipient || ''}</td>
+                  <td class="govuk-table__cell">${n.reference || '-'}</td>
+                  <td class="govuk-table__cell govuk-!-font-size-14">${n.id}</td>
+                  <td class="govuk-table__cell"><a href="#" class="govuk-link" onclick="viewJson(event, '${n.id}')">View JSON</a></td>
+              `;
+              tbody.appendChild(tr);
+          });
+      }
+
+      function renderTemplatesTable() {
+          const tbody = document.getElementById('templates-table-body');
+          if (!tbody) return;
+          tbody.innerHTML = '';
+
+          if (templatesData.length === 0) {
+              tbody.innerHTML = '<tr class="govuk-table__row"><td class="govuk-table__cell" colspan="4">No templates created.</td></tr>';
+              return;
+          }
+
+          templatesData.forEach(t => {
+              const tr = document.createElement('tr');
+              tr.className = 'govuk-table__row';
+
+              const tagClass = t.type === 'email' ? 'govuk-tag--blue' : 'govuk-tag--green';
+
+              tr.innerHTML = `
+                  <td class="govuk-table__cell govuk-!-font-weight-bold">${t.name}</td>
+                  <td class="govuk-table__cell"><strong class="govuk-tag ${tagClass}">${t.type}</strong></td>
+                  <td class="govuk-table__cell govuk-!-font-size-14">${t.id}</td>
+                  <td class="govuk-table__cell">
+                      <a href="#" class="govuk-link" onclick="editTemplate(event, '${t.id}')">Edit</a>
+                      <a href="#" class="govuk-link govuk-link--no-visited-state" style="color:#d4351c; margin-left: 10px;" onclick="deleteTemplate(event, '${t.id}')">Delete</a>
+                  </td>
+              `;
+              tbody.appendChild(tr);
+          });
+      }
 
       function viewJson(e, id) {
         e.preventDefault();
@@ -467,8 +563,6 @@
           const id = document.getElementById('tpl-id').value;
           const formData = new FormData(e.target);
           const data = Object.fromEntries(formData.entries());
-
-          // Remove ID from data payload, it's used for logic but not needed in body for CREATE/UPDATE request body structure in models
           delete data.id;
 
           const method = id ? 'PUT' : 'POST';
@@ -482,7 +576,8 @@
               });
 
               if (response.ok) {
-                  window.location.reload();
+                  resetTemplateForm();
+                  fetchTemplates();
               } else {
                   alert(`Failed to ${id ? 'update' : 'create'} template`);
               }
@@ -499,7 +594,7 @@
           try {
               const response = await fetch(`/pit/template/${id}`, { method: 'DELETE' });
               if (response.ok) {
-                  window.location.reload();
+                  fetchTemplates(); // Refresh list without reload
               } else {
                   alert("Failed to delete template");
               }

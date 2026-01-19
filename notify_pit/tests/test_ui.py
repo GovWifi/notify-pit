@@ -120,7 +120,7 @@ def test_create_and_delete_template(page: Page, api_client):
     # Use a precise selector so we don't click the "Create Template" heading
     page.get_by_role("button", name="Create").click()
 
-    # Wait for the row to be visible. This confirms the reload finished
+    # Wait for the row to be visible. This confirms the reload/fetch finished
     # and the template was saved.
     row = page.locator("#templates tbody tr", has_text="UI Test Template")
     expect(row).to_be_visible()
@@ -146,6 +146,47 @@ def test_create_and_delete_template(page: Page, api_client):
     updated_row.get_by_text("Delete").click()
 
     # 6. Verify gone
-    # After reload, the row should be replaced by the "No templates" message.
+    # After reload/fetch, the row should be replaced by the "No templates" message.
     no_data_row = page.locator("#templates tbody tr", has_text="No templates created")
     expect(no_data_row).to_be_visible()
+
+
+def test_tab_switching_refreshes_data(page: Page, api_client):
+    """
+    Verify that switching tabs refreshes the data without a full page reload.
+    """
+    api_client.delete("/pit/reset")
+    page.goto(BASE_URL)
+
+    # 1. Start on Notifications tab (default)
+    expect(page.locator("#total-count")).to_have_text("0")
+
+    # 2. Create a template in the background
+    api_client.post(
+        "/pit/template",
+        json={"type": "sms", "name": "Background Template", "body": "Body"},
+    )
+
+    # 3. Switch to Templates tab
+    page.click("a[href='#templates']")
+
+    # 4. Verify Template appears (Fetch triggered on click)
+    row = page.locator("#templates tbody tr", has_text="Background Template")
+    expect(row).to_be_visible()
+
+    # 5. Create a Notification in the background
+    token = create_token()
+    headers = {"Authorization": f"Bearer {token}"}
+    api_client.post(
+        "/v2/notifications/sms",
+        json={"phone_number": "07700900001", "template_id": str(uuid.uuid4())},
+        headers=headers,
+    )
+
+    # 6. Switch back to Notifications tab
+    page.click("a[href='#notifications']")
+
+    # 7. Verify Notification appears (Fetch triggered on click)
+    expect(page.locator("#total-count")).to_have_text("1")
+    notif_row = page.locator("#notifications-table tbody tr", has_text="sms")
+    expect(notif_row).to_be_visible()

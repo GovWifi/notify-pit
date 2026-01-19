@@ -29,7 +29,7 @@ localuitest:
 	@bash -c 'while ! curl -s http://localhost:8000/healthcheck > /dev/null; do sleep 1; done'
 	@echo "Service is up! Running UI tests..."
 	# Run the tests visually
-	pytest tests/test_ui.py --headed --slowmo 1000 --pdb
+	pytest tests/test_ui.py --headed --slowmo 1000
 
 # Check code style (used in CI)
 lint:

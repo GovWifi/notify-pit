@@ -26,6 +26,8 @@ government services.
 - **API Parity**: Mocked implementations for SMS, Email, Letter, and Received Text endpoints based on the official spec.
 - **Loopback Logic**: Automatically generates "received" text messages based on sent SMS content (e.g. sending a signup SMS generates a reply with credentials).
 - **JWT Security**: Strictly validates JWT tokens using the 30-second expiry window and `iss` and `iat` claims.
+- **Persistent Storage**: Uses SQLite by default to store notifications and templates, ensuring data survives restarts. Supports PostgreSQL for production use cases.
+- **Database Migrations**: Includes Alembic for managing database schema changes. Migrations run automatically on startup.
 - **Recovery APIs**: Custom `/pit` endpoints to retrieve, inject, or reset received data for test assertions.
 
 ## Prerequisites
@@ -83,6 +85,24 @@ the **last 36 characters** of your API key (the secret key UUID).
 ``` bash
 # Example for API Key: key_name-iss_uuid-574329d4-b6dd-4982-9204-c33fc3c45dbb
 docker run --rm -p 8000:8000 -e NOTIFY_SECRET=574329d4-b6dd-4982-9204-c33fc3c45dbb notify-pit
+```
+
+### Database Persistence
+
+By default, the service uses an internal SQLite database (`notify_pit.db`).
+
+To use **PostgreSQL** instead, set the `DATABASE_URL` environment variable:
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e DATABASE_URL=postgresql://user:password@hostname/dbname \
+  notify-pit
+```
+
+Migrations are applied automatically when the container starts. To run them manually:
+
+```bash
+alembic upgrade head
 ```
 
 ## Testing and Coverage

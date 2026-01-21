@@ -5,3 +5,5 @@ cryptography
 pydantic
 jinja2
 aiofiles
+sqlalchemy
+alembic

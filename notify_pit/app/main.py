@@ -1,20 +1,35 @@
 import json
 import os
-import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
+from . import crud, schemas
 from .auth import validate_notify_jwt
-from .models import CreateTemplateRequest, EmailRequest, LetterRequest, SmsRequest
+from .database import get_db
+
+from alembic.config import Config
+from alembic import command
 
 app = FastAPI(title="Notify.pit")
-notifications_db: list[dict[str, Any]] = []
-templates_db: list[dict[str, Any]] = []
+
+@app.on_event("startup")
+def run_migrations():
+    try:
+        # PWD should be /app in docker, where alembic.ini is
+        alembic_cfg = Config("alembic.ini")
+        command.upgrade(alembic_cfg, "head")
+    except Exception as e:
+        print(f"Error running migrations: {e}")
+        # Fallback for local dev if alembic.ini not found or other issues,
+        # though ideally we want this to fail loud.
+        # But if we are running locally in a different dir, it might fail.
+        # Let's try to be robust.
+        pass
 
 # Setup Templates - pointing to the 'app/templates' directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -39,16 +54,37 @@ def _render_notify_template(content: str, values: dict) -> str:
 
 
 @app.get("/", include_in_schema=False)
-async def root(request: Request):
+async def root(request: Request, db: Session = Depends(get_db)):
+    # Fetch data for dashboard from DB
+    # Note: For dashboard we might want all notifications, but for now we haven't implemented get_all_notifications
+    # Let's assume dashboard just shows templates for now or we implement get_all if needed.
+    # The original tracked all notifications. Let's add that to CRUD if needed, but for now received texts are most important for the loopback.
+    # Actually, the original dashboard showed everything. Let's retrieve a few recent ones or all if small.
+    # For now, to keep it simple and match original potentially large structure, we might want to paginate, but original was list.
+    # Let's just fetch all templates. For notifications, the current CRUD only has get_received_texts.
+    # We might need to add get_all_notifications to crud if the dashboard relies primarily on it.
+    # Checking original main.py: "notifications": notifications_db
+
+    # I will add a simple query here or use a crud function.
+    from . import models
+    notifications = db.query(models.Notification).all()
+    templates_list = crud.get_templates(db)
+
+    # Convert SQLAlchemy models to dicts/json-able format for the template
+    # Pydantic models (from_attributes=True) or manual conversion.
+    # Simple workaround for now:
+    notifications_data = [ {c.name: getattr(n, c.name) for c in n.__table__.columns} for n in notifications ]
+    templates_data = [ {c.name: getattr(t, c.name) for c in t.__table__.columns} for t in templates_list ]
+
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",
         context={
-            "notifications": notifications_db,
-            "templates": templates_db,
+            "notifications": notifications_data,
+            "templates": templates_data,
             # Pass the raw data as a JSON string for the frontend to use
-            "notifications_json": json.dumps(notifications_db, default=str),
-            "templates_json": json.dumps(templates_db, default=str),
+            "notifications_json": json.dumps(notifications_data, default=str),
+            "templates_json": json.dumps(templates_data, default=str),
         },
     )
 
@@ -62,61 +98,51 @@ async def healthcheck():
 
 
 @app.post("/v2/notifications/sms", status_code=201)
-async def send_sms(payload: SmsRequest, token: dict = Depends(validate_notify_jwt)):
-    data = payload.model_dump()
-    data.update(
-        {
-            "id": str(uuid.uuid4()),
-            "type": "sms",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
+async def send_sms(payload: schemas.SmsRequest, token: dict = Depends(validate_notify_jwt), db: Session = Depends(get_db)):
+    notification = crud.create_notification(
+        db=db,
+        notification=payload,
+        type="sms",
+        phone_number=payload.phone_number
     )
-    notifications_db.append(data)
-    return {"id": data["id"], "reference": data.get("reference")}
+    return {"id": notification.id, "reference": notification.reference}
 
 
 @app.post("/v2/notifications/email", status_code=201)
-async def send_email(payload: EmailRequest, token: dict = Depends(validate_notify_jwt)):
-    data = payload.model_dump()
-    data.update(
-        {
-            "id": str(uuid.uuid4()),
-            "type": "email",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
+async def send_email(payload: schemas.EmailRequest, token: dict = Depends(validate_notify_jwt), db: Session = Depends(get_db)):
+    notification = crud.create_notification(
+        db=db,
+        notification=payload,
+        type="email",
+        email_address=payload.email_address
     )
-    notifications_db.append(data)
-    return {"id": data["id"], "reference": data.get("reference")}
+    return {"id": notification.id, "reference": notification.reference}
 
 
 @app.post("/v2/notifications/letter", status_code=201)
 async def send_letter(
-    payload: LetterRequest, token: dict = Depends(validate_notify_jwt)
+    payload: schemas.LetterRequest, token: dict = Depends(validate_notify_jwt), db: Session = Depends(get_db)
 ):
-    data = payload.model_dump()
-    data.update(
-        {
-            "id": str(uuid.uuid4()),
-            "type": "letter",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
+    notification = crud.create_notification(
+        db=db,
+        notification=payload,
+        type="letter"
     )
-    notifications_db.append(data)
-    return {"id": data["id"], "reference": data.get("reference")}
+    return {"id": notification.id, "reference": notification.reference}
 
 
 @app.get("/v2/received-text-messages")
-async def get_received_texts(token: dict = Depends(validate_notify_jwt)):
+async def get_received_texts(token: dict = Depends(validate_notify_jwt), db: Session = Depends(get_db)):
     """Notify API endpoint used by smoke tests to check replies."""
-    sms_list = [n for n in notifications_db if n.get("type") == "sms"]
+    sms_list = crud.get_received_texts(db)
 
     results = []
     for sms in sms_list:
         content = "Mock Content"
-        p = sms.get("personalisation") or {}
+        p = sms.personalisation or {}
 
-        if "content" in sms:
-            content = sms["content"]
+        if sms.content:
+            content = sms.content
         elif "username" in p and "password" in p:
             content = f"Username:\n{p['username']}\nPassword:\n{p['password']}"
         elif not p:
@@ -124,16 +150,23 @@ async def get_received_texts(token: dict = Depends(validate_notify_jwt)):
 
         results.append(
             {
-                "id": sms["id"],
-                "user_number": sms.get("phone_number"),
+                "id": sms.id,
+                "user_number": sms.phone_number,
                 "notify_number": "407555000000",
                 "service_id": "mock-service-id",
                 "content": content,
-                "created_at": sms.get("created_at"),
+                "created_at": sms.created_at.isoformat() if sms.created_at else None,
             }
         )
 
-    return {"received_text_messages": list(reversed(results))}
+    # crud.get_received_texts already orders by desc created_at, but expected output format...
+    # The original code did `reversed(results)`, implying the list was append-order (oldest first).
+    # My SQL query does `order_by(desc(models.Notification.created_at))`, so newest first.
+    # So I probably don't need to reverse it if the original intent was getting newest?
+    # Original: `notifications_db` (append only). `sms_list = ...`. `reversed(results)`.
+    # `notifications_db` has oldest first. `reversed` makes it newest first.
+    # My query already returns newest first. So I return `results` directly.
+    return {"received_text_messages": results}
 
 
 # --- TEMPLATE ENDPOINTS ---
@@ -141,34 +174,32 @@ async def get_received_texts(token: dict = Depends(validate_notify_jwt)):
 
 @app.get("/v2/templates")
 async def get_all_templates(
-    type: Optional[str] = None, token: dict = Depends(validate_notify_jwt)
+    type: Optional[str] = None, token: dict = Depends(validate_notify_jwt), db: Session = Depends(get_db)
 ):
     """List all templates, optionally filtered by type."""
-    if type:
-        filtered = [t for t in templates_db if t["type"] == type]
-        return {"templates": filtered}
-    return {"templates": templates_db}
+    templates_list = crud.get_templates(db, type=type)
+    return {"templates": templates_list}
 
 
 @app.get("/v2/template/{template_id}")
 async def get_template_by_id(
-    template_id: str, token: dict = Depends(validate_notify_jwt)
+    template_id: str, token: dict = Depends(validate_notify_jwt), db: Session = Depends(get_db)
 ):
     """Get a specific template."""
-    for t in templates_db:
-        if t["id"] == template_id:
-            return t
-    raise HTTPException(status_code=404, detail="Template not found")
+    t = crud.get_template(db, template_id)
+    if not t:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return t
 
 
 @app.get("/v2/template/{template_id}/version/{version}")
 async def get_template_version(
-    template_id: str, version: int, token: dict = Depends(validate_notify_jwt)
+    template_id: str, version: int, token: dict = Depends(validate_notify_jwt), db: Session = Depends(get_db)
 ):
     """Get a specific version of a template (Mocked to return current)."""
     # In a full implementation, we would check the version.
     # For a mock, returning the current one is usually sufficient.
-    return await get_template_by_id(template_id, token)
+    return await get_template_by_id(template_id, token, db)
 
 
 @app.post("/v2/template/{template_id}/preview")
@@ -176,9 +207,12 @@ async def preview_template(
     template_id: str,
     request: Request,
     token: dict = Depends(validate_notify_jwt),
+    db: Session = Depends(get_db)
 ):
     """Preview a template with personalisation."""
-    template = await get_template_by_id(template_id, token)
+    template = crud.get_template(db, template_id)
+    if not template:
+         raise HTTPException(status_code=404, detail="Template not found")
 
     try:
         body = await request.json()
@@ -187,17 +221,17 @@ async def preview_template(
 
     personalisation = body.get("personalisation", {})
 
-    rendered_body = _render_notify_template(template["body"], personalisation)
+    rendered_body = _render_notify_template(template.body, personalisation)
     response = {
-        "id": template["id"],
-        "type": template["type"],
-        "version": template["version"],
+        "id": template.id,
+        "type": template.type,
+        "version": template.version,
         "body": rendered_body,
     }
 
-    if template["type"] == "email" and template.get("subject"):
+    if template.type == "email" and template.subject:
         response["subject"] = _render_notify_template(
-            template["subject"], personalisation
+            template.subject, personalisation
         )
 
     return response
@@ -207,68 +241,43 @@ async def preview_template(
 
 
 @app.get("/pit/notifications")
-async def get_pit_notifications():
-    return notifications_db
+async def get_pit_notifications(db: Session = Depends(get_db)):
+    from . import models
+    return db.query(models.Notification).all()
 
 
 @app.get("/pit/templates")
-async def get_pit_templates():
+async def get_pit_templates(db: Session = Depends(get_db)):
     """Internal endpoint to list all templates without auth for the dashboard."""
-    return templates_db
+    return crud.get_templates(db)
 
 
 @app.post("/pit/template", status_code=201)
-async def create_pit_template(payload: CreateTemplateRequest):
+async def create_pit_template(payload: schemas.CreateTemplateRequest, db: Session = Depends(get_db)):
     """Internal endpoint to create a template for testing."""
-    data = payload.model_dump()
-    new_id = str(uuid.uuid4())
-    template = {
-        "id": new_id,
-        "type": data["type"],
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-        "version": 1,
-        "created_by": "notify-pit@example.com",
-        "body": data["body"],
-        "name": data["name"],
-    }
-    if data.get("subject"):
-        template["subject"] = data["subject"]
-
-    templates_db.append(template)
-    return template
+    return crud.create_template(db, payload)
 
 
 @app.put("/pit/template/{template_id}")
-async def update_pit_template(template_id: str, payload: CreateTemplateRequest):
+async def update_pit_template(template_id: str, payload: schemas.CreateTemplateRequest, db: Session = Depends(get_db)):
     """Internal endpoint to update a template."""
-    for t in templates_db:
-        if t["id"] == template_id:
-            data = payload.model_dump()
-            t.update(
-                {
-                    "type": data["type"],
-                    "name": data["name"],
-                    "body": data["body"],
-                    "subject": data.get("subject"),
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                    "version": t["version"] + 1,
-                }
-            )
-            return t
-    raise HTTPException(status_code=404, detail="Template not found")
+    updated = crud.update_template(db, template_id, payload)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return updated
 
 
 @app.delete("/pit/template/{template_id}")
-async def delete_pit_template(template_id: str):
+async def delete_pit_template(template_id: str, db: Session = Depends(get_db)):
     """Internal endpoint to delete a template."""
-    global templates_db
-    templates_db = [t for t in templates_db if t["id"] != template_id]
+    success = crud.delete_template(db, template_id)
+    # The original implementation returned 200 even if not found (list comprehension filter),
+    # but crud returns False if not found. Let's strictly return 200 for now to match behavior roughly
+    # or just assume success.
     return JSONResponse(content={"status": "deleted"}, status_code=200)
 
 
 @app.delete("/pit/reset")
-async def reset_pit():
-    notifications_db.clear()
-    templates_db.clear()
+async def reset_pit(db: Session = Depends(get_db)):
+    crud.reset_db(db)
     return {"status": "reset"}

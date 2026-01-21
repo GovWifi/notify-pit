@@ -6,7 +6,7 @@ target-version = "py312"
 [tool.ruff.lint]
 # Enable Pyflakes (`F`), pycodestyle (`E`, `W`), and isort (`I`)
 select = ["E", "F", "I"]
-ignore = []
+ignore = ["E501"]
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

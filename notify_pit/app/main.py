@@ -2,18 +2,18 @@ import json
 import os
 from typing import Optional
 
+from alembic.config import Config
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from alembic import command
+
 from . import crud, schemas
 from .auth import validate_notify_jwt
 from .database import get_db
-
-from alembic.config import Config
-from alembic import command
 
 app = FastAPI(title="Notify.pit")
 

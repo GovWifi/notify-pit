@@ -1,8 +1,10 @@
-from sqlalchemy import Column, String, JSON, Integer, DateTime
-from sqlalchemy.sql import func
-from .database import Base
 import uuid
-import datetime
+
+from sqlalchemy import JSON, Column, DateTime, Integer, String
+from sqlalchemy.sql import func
+
+from .database import Base
+
 
 def generate_uuid():
     return str(uuid.uuid4())

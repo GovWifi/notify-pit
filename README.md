@@ -17,7 +17,7 @@ allowing teams to test notification logic without contacting real
 government services.
 
 <!-- Pytest Coverage Comment:Begin -->
-<a href="https://github.com/GovWifi/notify-pit/blob/main/README.md"><img alt="Coverage" src="https://img.shields.io/badge/Coverage-99%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/__init__.py">__init__.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/auth.py">auth.py</a></td><td>15</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/main.py">main.py</a></td><td>124</td><td>1</td><td>99%</td><td><a href="https://github.com/GovWifi/notify-pit/blob/main/main.py#L217">217</a></td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/models.py">models.py</a></td><td>17</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>156</b></td><td><b>1</b></td><td><b>99%</b></td><td>&nbsp;</td></tr></tbody></table></details>
+<a href="https://github.com/GovWifi/notify-pit/blob/main/README.md"><img alt="Coverage" src="https://img.shields.io/badge/Coverage-94%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/__init__.py">__init__.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/auth.py">auth.py</a></td><td>15</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/crud.py">crud.py</a></td><td>57</td><td>2</td><td>96%</td><td><a href="https://github.com/GovWifi/notify-pit/blob/main/crud.py#L10">10</a>, <a href="https://github.com/GovWifi/notify-pit/blob/main/crud.py#L114">114</a></td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/database.py">database.py</a></td><td>12</td><td>4</td><td>66%</td><td><a href="https://github.com/GovWifi/notify-pit/blob/main/database.py#L18-L20">18&ndash;20</a>, <a href="https://github.com/GovWifi/notify-pit/blob/main/database.py#L22">22</a></td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/main.py">main.py</a></td><td>123</td><td>8</td><td>93%</td><td><a href="https://github.com/GovWifi/notify-pit/blob/main/main.py#L23">23</a>, <a href="https://github.com/GovWifi/notify-pit/blob/main/main.py#L25-L28">25&ndash;28</a>, <a href="https://github.com/GovWifi/notify-pit/blob/main/main.py#L33">33</a>, <a href="https://github.com/GovWifi/notify-pit/blob/main/main.py#L232">232</a>, <a href="https://github.com/GovWifi/notify-pit/blob/main/main.py#L268">268</a></td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/models.py">models.py</a></td><td>32</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/GovWifi/notify-pit/blob/main/schemas.py">schemas.py</a></td><td>17</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>256</b></td><td><b>14</b></td><td><b>94%</b></td><td>&nbsp;</td></tr></tbody></table></details>
 <!-- Pytest Coverage Comment:End -->
 
 ## Features
@@ -26,6 +26,8 @@ government services.
 - **API Parity**: Mocked implementations for SMS, Email, Letter, and Received Text endpoints based on the official spec.
 - **Loopback Logic**: Automatically generates "received" text messages based on sent SMS content (e.g. sending a signup SMS generates a reply with credentials).
 - **JWT Security**: Strictly validates JWT tokens using the 30-second expiry window and `iss` and `iat` claims.
+- **Persistent Storage**: Uses SQLite by default to store notifications and templates, ensuring data survives restarts. Supports PostgreSQL for production use cases.
+- **Database Migrations**: Includes Alembic for managing database schema changes. Migrations run automatically on startup.
 - **Recovery APIs**: Custom `/pit` endpoints to retrieve, inject, or reset received data for test assertions.
 
 ## Prerequisites
@@ -83,6 +85,24 @@ the **last 36 characters** of your API key (the secret key UUID).
 ``` bash
 # Example for API Key: key_name-iss_uuid-574329d4-b6dd-4982-9204-c33fc3c45dbb
 docker run --rm -p 8000:8000 -e NOTIFY_SECRET=574329d4-b6dd-4982-9204-c33fc3c45dbb notify-pit
+```
+
+### Database Persistence
+
+By default, the service uses an internal SQLite database (`notify_pit.db`).
+
+To use **PostgreSQL** instead, set the `DATABASE_URL` environment variable:
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e DATABASE_URL=postgresql://user:password@hostname/dbname \
+  notify-pit
+```
+
+Migrations are applied automatically when the container starts. To run them manually:
+
+```bash
+alembic upgrade head
 ```
 
 ## Testing and Coverage

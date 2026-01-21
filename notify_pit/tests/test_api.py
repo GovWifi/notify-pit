@@ -129,20 +129,14 @@ def test_received_text_deletion_flow(client):
     )
 
 
-def test_received_text_fallback_flow(client):
+def test_received_text_fallback_flow(client, db_session):
     """Test Branch 3: Manually injected content hits the fallback."""
     client.delete("/pit/reset")
     # Manually inject to force coverage of the explicit content path
-    from app.main import notifications_db
+    from app import crud
 
-    notifications_db.append(
-        {
-            "id": "manual-id",
-            "type": "sms",
-            "phone_number": "07700900000",
-            "content": "Direct Content",
-            "created_at": "2023-01-01T00:00:00",
-        }
+    crud.create_received_text(
+        db_session, phone_number="07700900000", content="Direct Content"
     )
 
     token = get_token()
@@ -150,10 +144,11 @@ def test_received_text_fallback_flow(client):
         "/v2/received-text-messages", headers={"Authorization": f"Bearer {token}"}
     )
 
-    msgs = [
-        m for m in response.json()["received_text_messages"] if m["id"] == "manual-id"
-    ]
-    assert msgs[0]["content"] == "Direct Content"
+    msgs = response.json()["received_text_messages"]
+    # We filter by content because ID is generated
+    found = [m for m in msgs if m["content"] == "Direct Content"]
+    assert len(found) == 1
+    assert found[0]["user_number"] == "07700900000"
 
 
 # --- TEMPLATE TESTS ---

@@ -7,9 +7,20 @@ from . import models, schemas
 
 
 def get_notification(db: Session, notification_id: str):
-    return db.query(models.Notification).filter(models.Notification.id == notification_id).first()
+    return (
+        db.query(models.Notification)
+        .filter(models.Notification.id == notification_id)
+        .first()
+    )
 
-def create_notification(db: Session, notification: schemas.NotificationBase, type: str, phone_number: str = None, email_address: str = None):
+
+def create_notification(
+    db: Session,
+    notification: schemas.NotificationBase,
+    type: str,
+    phone_number: str = None,
+    email_address: str = None,
+):
     db_notification = models.Notification(
         type=type,
         template_id=str(notification.template_id),
@@ -17,15 +28,22 @@ def create_notification(db: Session, notification: schemas.NotificationBase, typ
         phone_number=phone_number,
         email_address=email_address,
         personalisation=notification.personalisation,
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
     )
     db.add(db_notification)
     db.commit()
     db.refresh(db_notification)
     return db_notification
 
+
 def get_received_texts(db: Session):
-    return db.query(models.Notification).filter(models.Notification.type == "sms").order_by(desc(models.Notification.created_at)).all()
+    return (
+        db.query(models.Notification)
+        .filter(models.Notification.type == "sms")
+        .order_by(desc(models.Notification.created_at))
+        .all()
+    )
+
 
 # Testing helper for received texts
 def create_received_text(db: Session, phone_number: str, content: str):
@@ -33,7 +51,7 @@ def create_received_text(db: Session, phone_number: str, content: str):
         type="sms",
         phone_number=phone_number,
         content=content,
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
     )
     db.add(db_notification)
     db.commit()
@@ -47,8 +65,10 @@ def get_templates(db: Session, type: str = None):
         query = query.filter(models.Template.type == type)
     return query.all()
 
+
 def get_template(db: Session, template_id: str):
     return db.query(models.Template).filter(models.Template.id == template_id).first()
+
 
 def create_template(db: Session, template: schemas.CreateTemplateRequest):
     db_template = models.Template(
@@ -58,14 +78,17 @@ def create_template(db: Session, template: schemas.CreateTemplateRequest):
         subject=template.subject,
         created_at=datetime.now(timezone.utc),
         updated_at=datetime.now(timezone.utc),
-        version=1
+        version=1,
     )
     db.add(db_template)
     db.commit()
     db.refresh(db_template)
     return db_template
 
-def update_template(db: Session, template_id: str, template_update: schemas.CreateTemplateRequest):
+
+def update_template(
+    db: Session, template_id: str, template_update: schemas.CreateTemplateRequest
+):
     db_template = get_template(db, template_id)
     if not db_template:
         return None
@@ -81,6 +104,7 @@ def update_template(db: Session, template_id: str, template_update: schemas.Crea
     db.refresh(db_template)
     return db_template
 
+
 def delete_template(db: Session, template_id: str):
     db_template = get_template(db, template_id)
     if db_template:
@@ -88,6 +112,7 @@ def delete_template(db: Session, template_id: str):
         db.commit()
         return True
     return False
+
 
 def reset_db(db: Session):
     db.query(models.Notification).delete()

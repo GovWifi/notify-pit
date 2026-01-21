@@ -13,7 +13,7 @@ SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False},
-    poolclass=StaticPool
+    poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -37,7 +37,7 @@ def client(db_session):
         try:
             yield db_session
         finally:
-            pass # db_session is closed in its own fixture
+            pass  # db_session is closed in its own fixture
 
     fastapi_app.dependency_overrides[get_db] = override_get_db
     yield TestClient(fastapi_app)

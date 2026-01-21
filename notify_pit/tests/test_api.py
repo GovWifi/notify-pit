@@ -135,7 +135,9 @@ def test_received_text_fallback_flow(client, db_session):
     # Manually inject to force coverage of the explicit content path
     from app import crud
 
-    crud.create_received_text(db_session, phone_number="07700900000", content="Direct Content")
+    crud.create_received_text(
+        db_session, phone_number="07700900000", content="Direct Content"
+    )
 
     token = get_token()
     response = client.get(

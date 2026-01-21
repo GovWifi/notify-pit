@@ -9,13 +9,16 @@ from .database import Base
 def generate_uuid():
     return str(uuid.uuid4())
 
+
 class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(String, primary_key=True, default=generate_uuid)
     type = Column(String, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    template_id = Column(String, nullable=True) # Optional, strictly speaking, but usually present
+    template_id = Column(
+        String, nullable=True
+    )  # Optional, strictly speaking, but usually present
     reference = Column(String, nullable=True)
     phone_number = Column(String, nullable=True)
     email_address = Column(String, nullable=True)

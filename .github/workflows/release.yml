@@ -18,7 +18,7 @@ jobs:
 
         steps:
             - name: Check out the repo
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   # Check out the exact commit that passed the tests (not just 'main')
                   ref: ${{ github.event.workflow_run.head_sha }}

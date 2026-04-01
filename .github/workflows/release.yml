@@ -31,7 +31,7 @@ jobs:
 
             - name: Extract metadata (tags, labels) for Docker
               id: meta
-              uses: docker/metadata-action@v5
+              uses: docker/metadata-action@v6
               with:
                   images: cooisinmuvihill/notify-pit
                   # Generates 'latest' tag and a tag for the commit SHA

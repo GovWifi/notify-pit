@@ -50,10 +50,12 @@ jobs:
                   report-only-changed-files: false
 
             - name: "Update README"
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
               run: |
                   sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n${{ steps.coverage.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ../README.md
 
             - name: "Commit README changes"
+              if: github.event_name == 'push' && github.ref == 'refs/heads/main'
               uses: stefanzweifel/git-auto-commit-action@v7
               with:
                   commit_message: "docs: update coverage badge"

@@ -58,3 +58,9 @@ jobs:
               with:
                   commit_message: "docs: update coverage badge"
                   file_pattern: README.md
+
+    release:
+        needs: test
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: ./.github/workflows/release.yml
+        secrets: inherit

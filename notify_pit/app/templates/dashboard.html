@@ -338,6 +338,9 @@
         </div>
     </dialog>
 
+    <script id="notifications-data" type="application/json">{{ notifications | tojson }}</script>
+    <script id="templates-data" type="application/json">{{ templates | tojson }}</script>
+
     <script type="module">
         import { initAll } from "{{ url_for('static', path='govuk-frontend-5.13.0.min.js') }}";
         initAll();
@@ -345,8 +348,8 @@
 
     <script>
       // Make variables let so they can be updated via fetch
-      let rawData = {{ notifications_json | safe }};
-      let templatesData = {{ templates_json | safe }};
+      let rawData = JSON.parse(document.getElementById('notifications-data').textContent);
+      let templatesData = JSON.parse(document.getElementById('templates-data').textContent);
 
       // --- FETCH FUNCTIONS ---
 

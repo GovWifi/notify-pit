@@ -4,6 +4,7 @@ from typing import Optional
 
 from alembic.config import Config
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -88,11 +89,8 @@ async def root(request: Request, db: Session = Depends(get_db)):
         request=request,
         name="dashboard.html",
         context={
-            "notifications": notifications_data,
-            "templates": templates_data,
-            # Pass the raw data as a JSON string for the frontend to use
-            "notifications_json": json.dumps(notifications_data, default=str),
-            "templates_json": json.dumps(templates_data, default=str),
+            "notifications": jsonable_encoder(notifications_data),
+            "templates": jsonable_encoder(templates_data),
         },
     )
 

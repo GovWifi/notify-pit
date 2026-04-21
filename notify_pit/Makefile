@@ -16,6 +16,7 @@ run:
 # Run all tests (unit+UI):
 test:
 	docker compose up -d app
+	touch tests/coverage.xml && chmod 666 tests/coverage.xml
 	docker compose run --rm tests pytest --browser chromium --cov=app --cov-report=xml:/app/tests/coverage.xml tests/
 	docker compose down
 

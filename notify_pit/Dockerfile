@@ -21,7 +21,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 # ==========================================
 # Stage 2: Test Runner (Includes Browsers)
 # ==========================================
-FROM mcr.microsoft.com/playwright/python:v1.57.0-jammy as test
+FROM mcr.microsoft.com/playwright/python:v1.58.0-jammy as test
 
 WORKDIR /app
 

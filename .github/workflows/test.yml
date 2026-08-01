@@ -34,7 +34,7 @@ jobs:
             - name: Post Coverage Comment
               id: coverage
               if: success()
-              uses: MishaKav/pytest-coverage-comment@a01708271d42c5703d489b13eb503ba47c01e82a # main
+              uses: MishaKav/pytest-coverage-comment@fd9adbdca9fdfbe2b9bfa44a7340e6a83346ce6c # main
               with:
                   # Path relative to the repository root
                   pytest-xml-coverage-path: notify_pit/tests/coverage.xml
